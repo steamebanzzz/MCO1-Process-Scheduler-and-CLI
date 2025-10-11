@@ -282,8 +282,10 @@ private:
                 return;
             }
             else if (cmd == "process-smi") {
-                // Wait briefly to ensure the scheduler has time to tick
-                std::this_thread::sleep_for(std::chrono::milliseconds(600));
+                {
+                    std::lock_guard<std::recursive_mutex> lock(proc_mutex);
+                    simulate_tick();  // <- trigger a quick tick so logs update
+                }
 
                 Process snapshot;
                 {
@@ -293,15 +295,13 @@ private:
                         std::cout << "Process not found.\n";
                         continue;
                     }
-                    snapshot = *it; // Copy while locked
+                    snapshot = *it;
                 }
 
-                // Print outside the lock (scheduler can keep updating logs)
                 snapshot.print_smi_unsafe();
 
-                // Optional: auto-exit if process has finished
                 if (snapshot.finished) {
-                    std::cout << "Process has finished execution. Returning to main menu.\n";
+                    std::cout << "Finished!\n";
                     return;
                 }
             }
@@ -352,10 +352,23 @@ private:
 
         for (auto& p : processes) {
             if (p.finished) continue;
-            p.executed++;
+
+            // Simulate executing multiple instructions per tick
+            int exec_per_tick = std::max(1, cfg.num_cpu * cfg.quantum_cycles);
+
+            // Randomize a bit for realism (e.g. 0.8x–1.2x variation)
+            std::uniform_real_distribution<double> jitter(0.8, 1.2);
+            exec_per_tick = static_cast<int>(exec_per_tick * jitter(rng));
+
+            // Update executed instruction count
+            p.executed = std::min(p.executed + exec_per_tick, p.total_instructions);
+
+            // Log one random instruction type for this tick
             std::string itype = p.ins_types[instr(rng)];
             p.logs.push_back(timestamp() + " Core:" + std::to_string(core(rng)) +
                 " Executed " + itype + " in " + p.name);
+
+            // If process finished
             if (p.executed >= p.total_instructions) {
                 p.finished = true;
                 p.logs.push_back("Finished!");
@@ -390,4 +403,3 @@ int main() {
     os.run();
     return 0;
 }
-
