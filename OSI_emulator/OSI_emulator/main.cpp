@@ -1,7 +1,3 @@
-// CSOPESY OS Emulator — Phases 1–5 (Final)
-// With background scheduler (0.5s tick) and live process updates.
-// Build: g++ -std=c++17 os_emulator.cpp -o os_emulator
-
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -114,7 +110,7 @@ public:
     ~OSEmulator() { stop_scheduler(); }
 
     void run() {
-        std::cout << "CSOPESY OS Emulator (Phases 1–5)\nType 'help' for commands.\n";
+        std::cout << "CSOPESY OS Emulator (Phases 1â€“5)\nType 'help' for commands.\n";
         std::string line;
         while (true) {
             std::cout << "> ";
@@ -235,7 +231,7 @@ private:
         std::lock_guard<std::recursive_mutex> lock(proc_mutex);
         auto it = find_process_by_name(name);
         if (it == processes.end()) { std::cout << "Process not found.\n"; return; }
-        if (it->finished) { std::cout << "Cannot reattach — process has finished.\n"; return; }
+        if (it->finished) { std::cout << "Cannot reattach â€” process has finished.\n"; return; }
         int pid = it->id;
         enter_process_screen(pid);
     }
@@ -394,3 +390,4 @@ int main() {
     os.run();
     return 0;
 }
+
