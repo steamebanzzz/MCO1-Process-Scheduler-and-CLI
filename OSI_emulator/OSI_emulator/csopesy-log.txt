@@ -1,0 +1,90 @@
+CPU Utilization Report
+Ticks=18 Busy=18 Util=100%
+Processes:
+  p1 pid=1 state=Running
+  p2 pid=2 state=Running
+  p03 pid=3 state=Finished
+  p04 pid=4 state=Running
+  p05 pid=5 state=Finished
+----
+CPU Utilization Report
+Ticks=18 Busy=18 Util=100%
+Processes:
+  p1 pid=1 state=Running
+  p2 pid=2 state=Running
+  p03 pid=3 state=Finished
+  p04 pid=4 state=Running
+  p05 pid=5 state=Finished
+----
+CPU Utilization Report
+Ticks=24 Busy=24 Util=100%
+Processes:
+  p1 pid=1 state=Finished
+  p2 pid=2 state=Finished
+  p03 pid=3 state=Finished
+  p04 pid=4 state=Finished
+  p05 pid=5 state=Finished
+  p06 pid=6 state=Finished
+----
+CPU Utilization Report
+Ticks=24 Busy=24 Util=100%
+Processes:
+  p1 pid=1 state=Finished
+  p2 pid=2 state=Finished
+  p03 pid=3 state=Finished
+  p04 pid=4 state=Finished
+  p05 pid=5 state=Finished
+  p06 pid=6 state=Finished
+----
+CPU Utilization Report
+Ticks=48 Busy=48 Util=100%
+Processes:
+  p1 pid=1 state=Finished
+  p2 pid=2 state=Finished
+  p03 pid=3 state=Finished
+  p04 pid=4 state=Finished
+  p05 pid=5 state=Finished
+  p06 pid=6 state=Finished
+  p5 pid=7 state=Finished
+  p08 pid=8 state=Finished
+  p09 pid=9 state=Finished
+  p10 pid=10 state=Finished
+  p11 pid=11 state=Finished
+  p12 pid=12 state=Finished
+----
+===== CPU UTILIZATION REPORT =====
+Total CPU ticks: 0
+Cores: 1 used=0 readyQ=2
+Process summary:
+ID	Name	State	RemainingIns
+1	p1	running	5
+2	p2	running	5
+==================================
+===== CPU UTILIZATION REPORT =====
+Total CPU ticks: 5
+Cores: 1 used=1 readyQ=0
+Process summary:
+ID	Name	State	RemainingIns
+1	p1	sleeping	4
+2	p2	running	2
+==================================
+===== CPU UTILIZATION REPORT =====
+Total CPU ticks: 74
+Cores: 1 used=1 readyQ=0
+Process summary:
+ID	Name	State	RemainingIns
+1	p1	finished	0
+2	p2	finished	0
+3	p3	finished	0
+4	p01	finished	0
+5	p02	running	4
+6	p03	finished	0
+==================================
+===== CPU UTILIZATION REPORT =====
+Total CPU ticks: 2
+Cores: 1 used=0 readyQ=2
+Process summary:
+ID	Name	State	RemainingIns
+1	p1	finished	0
+2	p2	running	3
+==================================
