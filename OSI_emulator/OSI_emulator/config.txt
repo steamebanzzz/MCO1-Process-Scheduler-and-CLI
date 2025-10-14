@@ -1,8 +1,7 @@
-# Default configuration parameters for OS Emulator
-num-cpu 4
-scheduler "rr"
-quantum-cycles 5
-batch-process-freq 1
-min-ins 1000
-max-ins 2000
+num-cpu 2
+scheduler fcfs
+quantum-cycles 2
+batch-process-freq 0
+min-ins 4
+max-ins 4
 delay-per-exec 0
