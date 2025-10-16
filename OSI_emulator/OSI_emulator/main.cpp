@@ -12,6 +12,9 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <ctime>
+#include <deque>
+// #include <sec_api/time_s.h>
 
 struct Config {
     int num_cpu = 1;
@@ -82,6 +85,8 @@ struct Process {
     bool finished = false;
     int total_instructions = 0;
     int executed = 0;
+    enum State { READY, RUNNING, FINISHED } state = READY;
+    int priority = 0;   // this is for priority scheduling (not implemented)
     std::vector<std::string> logs;
     std::vector<std::string> ins_types = { "LOAD", "STORE", "ADD", "SUB", "MUL", "DIV", "JMP", "CMP" };
 
@@ -108,6 +113,10 @@ public:
     }
 
     ~OSEmulator() { stop_scheduler(); }
+
+    std::deque<std::list<Process>::iterator> ready_queue;
+    std::vector<std::list<Process>::iterator> running;  // one per core
+    std::vector<int> quantum_left;                      // per-core quantum countdown
 
     void run() {
         std::cout << "CSOPESY OS Emulator (Phases 1–5)\nType 'help' for commands.\n";
@@ -155,18 +164,19 @@ private:
     std::mt19937 rng;
 
     // ============= HELPERS =============
-    std::string timestamp() {
+            std::string timestamp() {
         auto now = std::chrono::system_clock::now();
         std::time_t tt = std::chrono::system_clock::to_time_t(now);
         std::tm tm{};
-#ifdef _WIN32
+    #if defined(_MSC_VER)
         localtime_s(&tm, &tt);
-#else
-        tm = *std::localtime(&tt);
-#endif
-        std::ostringstream ss;
-        ss << "(" << std::put_time(&tm, "%m/%d/%Y %I:%M:%S%p") << ")";
-        return ss.str();
+    #else
+        std::tm* tmptr = std::localtime(&tt);
+        if (tmptr) tm = *tmptr;
+    #endif
+        char buf[64];
+        std::strftime(buf, sizeof(buf), "(%m/%d/%Y %I:%M:%S%p)", &tm);
+        return std::string(buf);
     }
 
     void safe_cout(const std::string& s) {
@@ -190,6 +200,9 @@ private:
             return;
         }
         initialized = true;
+        // Initialize running and quantum_left vectors based on num_cpu
+        running = std::vector<std::list<Process>::iterator>(cfg.num_cpu, processes.end());
+        quantum_left = std::vector<int>(cfg.num_cpu, 0);
         std::cout << "Initialized successfully from " << fname << "\n";
         std::cout << "num-cpu: " << cfg.num_cpu << " | scheduler: " << cfg.scheduler << "\n";
     }
@@ -246,7 +259,12 @@ private:
         p.executed = 0;
         p.logs.push_back(timestamp() + " Core:0 \"Hello world from " + name + "\"");
         processes.push_back(std::move(p));
+
+        auto it = processes.end();
+        --it;
+        ready_queue.push_back(it);
     }
+
 
     auto find_process_by_name(const std::string& name) -> std::list<Process>::iterator {
         return std::find_if(processes.begin(), processes.end(),
@@ -347,34 +365,58 @@ private:
         tick_count++;
         batch_tick_counter++;
 
-        std::uniform_int_distribution<int> core(0, std::max(0, cfg.num_cpu - 1));
-        std::uniform_int_distribution<int> instr(0, 7);
-
-        for (auto& p : processes) {
-            if (p.finished) continue;
-
-            // Simulate executing multiple instructions per tick
-            int exec_per_tick = std::max(1, cfg.num_cpu * cfg.quantum_cycles);
-
-            // Randomize a bit for realism (e.g. 0.8x–1.2x variation)
-            std::uniform_real_distribution<double> jitter(0.8, 1.2);
-            exec_per_tick = static_cast<int>(exec_per_tick * jitter(rng));
-
-            // Update executed instruction count
-            p.executed = std::min(p.executed + exec_per_tick, p.total_instructions);
-
-            // Log one random instruction type for this tick
-            std::string itype = p.ins_types[instr(rng)];
-            p.logs.push_back(timestamp() + " Core:" + std::to_string(core(rng)) +
-                " Executed " + itype + " in " + p.name);
-
-            // If process finished
-            if (p.executed >= p.total_instructions) {
-                p.finished = true;
-                p.logs.push_back("Finished!");
+        // Assign new processes if core is idle
+        for (size_t i = 0; i < running.size(); ++i) {
+            if (running[i] == processes.end()) {
+                if (!ready_queue.empty()) {
+                    running[i] = ready_queue.front();
+                    ready_queue.pop_front();
+                    running[i]->state = Process::RUNNING;
+                    quantum_left[i] = (cfg.scheduler == "rr") ? cfg.quantum_cycles : INT_MAX;
+                    running[i]->logs.push_back(timestamp() + " Dispatched " + running[i]->name + " to core " + std::to_string(i));
+                }
             }
         }
 
+        // Execute one instruction per core
+        for (size_t i = 0; i < running.size(); ++i) {
+            if (running[i] != processes.end()) {
+                Process& p = *running[i];
+                p.executed++;
+                quantum_left[i]--;
+
+                p.logs.push_back(timestamp() + " Core " + std::to_string(i) + 
+                                " executed 1 instr of " + p.name);
+
+                // Check if process finished
+                if (p.executed >= p.total_instructions) {
+                    p.finished = true;
+                    p.state = Process::FINISHED;
+                    running[i] = processes.end();
+                    p.logs.push_back(timestamp() + " " + p.name + 
+                                    " finished on core " + std::to_string(i));
+                }
+                // Round Robin: quantum expired, then preempt
+                else if (cfg.scheduler == "rr" && quantum_left[i] <= 0) {
+                    p.logs.push_back(timestamp() + " " + p.name + 
+                                    " preempted on core " + std::to_string(i));
+                    p.state = Process::READY;
+                    ready_queue.push_back(find_process_by_id(p.id));
+                    running[i] = processes.end();
+                }
+            }
+            // If core is now idle, assign next process
+            if (running[i] == processes.end() && !ready_queue.empty()) {
+                auto next_proc = ready_queue.front();
+                ready_queue.pop_front();
+                next_proc->state = Process::RUNNING;
+                running[i] = next_proc;
+                quantum_left[i] = (cfg.scheduler == "rr") ? cfg.quantum_cycles : INT_MAX;
+                next_proc->logs.push_back(timestamp() + " Dispatched " + next_proc->name +
+                                        " to core " + std::to_string(i));
+            }
+        }
+        
         if (cfg.batch_process_freq > 0 && batch_tick_counter >= cfg.batch_process_freq) {
             batch_tick_counter = 0;
             add_process_locked("p" + std::to_string(auto_process_counter++));
@@ -384,14 +426,51 @@ private:
     // ===== REPORT =====
     void report_util() {
         std::lock_guard<std::recursive_mutex> lock(proc_mutex);
-        std::cout << "===== CPU UTILIZATION REPORT =====\n";
-        std::cout << "Total CPU ticks: " << tick_count << "\n";
-        std::cout << "Cores: " << cfg.num_cpu << "\n";
-        for (const auto& p : processes)
-            std::cout << "  " << p.name << " | ID: " << p.id
-            << " | " << (p.finished ? "finished" : "running")
-            << " | Progress: " << p.executed << "/" << p.total_instructions << "\n";
-        std::cout << "==================================\n";
+
+        // counts how many cores are used
+        int cores_used = 0;
+        for (const auto& core : running)
+            if (core != processes.end())
+                cores_used++;
+
+        // counts ready size of the queue
+        int ready_q_size = (int)ready_queue.size();
+
+        std::ostringstream oss;
+        oss << "===== CPU UTILIZATION REPORT =====\n";
+        oss << "Total CPU ticks: " << tick_count << "\n";
+        oss << "Cores: " << cfg.num_cpu
+            << " used=" << cores_used
+            << " readyQ=" << ready_q_size << "\n";
+        oss << "Process summary:\n";
+        oss << "ID\tName\tState\tRemainingIns\n";
+
+        for (const auto& p : processes) {
+            int remaining = std::max(0, p.total_instructions - p.executed);
+            std::string state_str;
+            if (p.finished) state_str = "finished";
+            else if (p.state == Process::RUNNING) state_str = "running";
+            else state_str = "ready";
+
+            oss << p.id << "\t"
+                << p.name << "\t"
+                << state_str << "\t"
+                << remaining << "\n";
+        }
+
+        oss << "==================================\n";
+
+        // Print to console
+        std::cout << oss.str();
+
+        // Append to log file
+        std::ofstream log("csopesy-log.txt", std::ios::app);
+        if (log.is_open()) {
+            log << oss.str();
+            log.close();
+        } else {
+            std::cerr << "Warning: Could not open csopesy-log.txt for writing.\n";
+        }
     }
 };
 
