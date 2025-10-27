@@ -233,3 +233,11 @@ ID	Name	State	RemainingIns
 4	P3	finished	0
 5	P4	finished	0
 ==================================
+===== CPU UTILIZATION REPORT =====
+Total CPU ticks: 23
+Cores: 2 used=0 readyQ=0
+Process summary:
+ID	Name	State	RemainingIns
+1	p1	finished	0
+2	p2	finished	0
+==================================

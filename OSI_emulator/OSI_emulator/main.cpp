@@ -26,6 +26,20 @@ struct Config {
     int delay_per_exec = 0;
 };
 
+enum class InstructionType {
+    PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR_START, FOR_END
+};
+
+struct Instruction {
+    InstructionType type;
+    std::string var1, var2, var3;
+    std::uint16_t value1 = 0, value2 = 0;
+    std::string message;
+    int sleep_ticks = 0;
+    int for_repeats = 0;
+    std::vector<Instruction> for_instructions;
+};
+
 static inline std::string trim(const std::string& s) {
     size_t a = 0;
     while (a < s.size() && std::isspace(static_cast<unsigned char>(s[a]))) ++a;
@@ -83,12 +97,26 @@ struct Process {
     int id = 0;
     std::string name;
     bool finished = false;
+    std::vector<Instruction> instructions;
+    int current_instruction = 0;
     int total_instructions = 0;
     int executed = 0;
-    enum State { READY, RUNNING, FINISHED } state = READY;
+    enum State { READY, RUNNING, FINISHED, SLEEPING } state = READY;
     int priority = 0;   // this is for priority scheduling (not implemented)
     std::vector<std::string> logs;
     std::vector<std::string> ins_types = { "LOAD", "STORE", "ADD", "SUB", "MUL", "DIV", "JMP", "CMP" };
+
+    std::map<std::string, std::uint16_t> variables;
+    int sleep_remaining = 0;
+    int delay_remaining = 0;
+
+    struct LoopContext{
+        int start;
+        int repeats_itself;
+        std::vector<Instruction> instructions;
+        int index = 0;
+    };
+    std::vector<LoopContext> loop_stack;
 
     void print_smi_unsafe() const {
         std::cout << "Process name: " << name << "\n";
@@ -97,9 +125,27 @@ struct Process {
         for (const auto& l : logs) std::cout << "  " << l << "\n";
         if (finished) std::cout << "Finished!\n";
         else {
-            std::cout << "Current instruction line: " << executed << "\n";
-            std::cout << "Lines of code: " << total_instructions << "\n";
+            std::cout << "Current instruction line: " << current_instruction << "\n";
+            std::cout << "Lines of code: " << instructions.size() << "\n";
         }
+    }
+
+    std::uint16_t get_variable(const std::string& name) {
+        if (variables.find(name) == variables.end()) {
+            variables[name] = 0;
+        }
+        return variables[name];
+    }
+
+    void set_variable(const std::string& name, std::uint16_t value) {
+        variables[name] = value;
+    }
+
+    std::uint16_t parse_operand(const std::string& operand) {
+        if (std::isdigit(operand[0])) {
+            return static_cast<std::uint16_t>(std::stoi(operand));
+        }
+        return get_variable(operand);
     }
 };
 
@@ -164,7 +210,7 @@ private:
     std::mt19937 rng;
 
     // ============= HELPERS =============
-            std::string timestamp() {
+    std::string timestamp() {
         auto now = std::chrono::system_clock::now();
         std::time_t tt = std::chrono::system_clock::to_time_t(now);
         std::tm tm{};
@@ -233,9 +279,33 @@ private:
     void list_processes() {
         std::lock_guard<std::recursive_mutex> lock(proc_mutex);
         if (processes.empty()) { std::cout << "No processes available.\n"; return; }
-        std::cout << "ID\tName\tState\n";
-        for (const auto& p : processes)
-            std::cout << p.id << "\t" << p.name << "\t" << (p.finished ? "finished" : "running") << "\n";
+        
+        int cores_used = 0;
+        for (const auto& core : running)
+            if (core != processes.end()) cores_used++;
+        
+        std::cout << "CPU utilization: " << std::fixed << std::setprecision(2) 
+                  << (100.0 * cores_used / cfg.num_cpu) << "%\n";
+        std::cout << "Cores used: " << cores_used << "\n";
+        std::cout << "Cores available: " << (cfg.num_cpu - cores_used) << "\n";
+        std::cout << "\nRunning processes:\n";
+        
+        for (const auto& core : running) {
+            if (core != processes.end()) {
+                std::cout << core->name << "\t" << core->current_instruction 
+                         << "/" << core->instructions.size() << "\t" 
+                         << timestamp() << "\n";
+            }
+        }
+        
+        std::cout << "\nFinished processes:\n";
+        for (const auto& p : processes) {
+            if (p.finished) {
+                std::cout << p.name << "\t" << p.instructions.size() 
+                         << "/" << p.instructions.size() << "\t" 
+                         << timestamp() << "\n";
+            }
+        }
     }
 
     void reattach_process_cmd(std::istringstream& iss) {
@@ -249,22 +319,77 @@ private:
         enter_process_screen(pid);
     }
 
+    // INSTRUCTION EXECUTION
+    std::vector<Instruction> generate_instructions(const std::string& name, int count) {
+        std::vector<Instruction> instructions;
+        std::uniform_int_distribution<int> type_dist(0, 6);
+        std::uniform_int_distribution<int> value_dist(1, 100);
+        std::uniform_int_distribution<int> sleep_dist(1, 10);
+        std::uniform_int_distribution<int> for_dist(2, 5);
+
+        // Always start with a PRINT instruction
+        Instruction print_inst;
+        print_inst.type = InstructionType::PRINT;
+        print_inst.message = "Hello world from " + name + "!";
+        instructions.push_back(print_inst);
+
+        for (int i = 1; i < count; ++i) {
+            Instruction inst;
+            int type = type_dist(rng);
+            
+            switch (type) {
+                case 0: // PRINT
+                    inst.type = InstructionType::PRINT;
+                    inst.message = "Hello world from " + name + "!";
+                    break;
+                case 1: // DECLARE
+                    inst.type = InstructionType::DECLARE;
+                    inst.var1 = "var" + std::to_string(i);
+                    inst.value1 = value_dist(rng);
+                    break;
+                case 2: // ADD
+                    inst.type = InstructionType::ADD;
+                    inst.var1 = "result" + std::to_string(i);
+                    inst.var2 = "var" + std::to_string(std::max(1, i-1));
+                    inst.value2 = value_dist(rng);
+                    break;
+                case 3: // SUBTRACT
+                    inst.type = InstructionType::SUBTRACT;
+                    inst.var1 = "result" + std::to_string(i);
+                    inst.var2 = "var" + std::to_string(std::max(1, i-1));
+                    inst.value2 = value_dist(rng);
+                    break;
+                case 4: // SLEEP
+                    inst.type = InstructionType::SLEEP;
+                    inst.sleep_ticks = sleep_dist(rng);
+                    break;
+                default: // Default to PRINT
+                    inst.type = InstructionType::PRINT;
+                    inst.message = "Hello world from " + name + "!";
+                    break;
+            }
+            instructions.push_back(inst);
+        }
+        return instructions;
+    }
+
     // ===== PROCESS HANDLING =====
     void add_process_locked(const std::string& name) {
         std::uniform_int_distribution<int> ins(cfg.min_ins, cfg.max_ins);
         Process p;
         p.id = next_pid++;
         p.name = name;
-        p.total_instructions = ins(rng);
+        p.instructions = generate_instructions(name, ins(rng));
+        p.current_instruction = 0;
         p.executed = 0;
-        p.logs.push_back(timestamp() + " Core:0 \"Hello world from " + name + "\"");
+        p.total_instructions = p.instructions.size();
+        p.logs.push_back(timestamp() + " Process created");
         processes.push_back(std::move(p));
 
         auto it = processes.end();
         --it;
         ready_queue.push_back(it);
     }
-
 
     auto find_process_by_name(const std::string& name) -> std::list<Process>::iterator {
         return std::find_if(processes.begin(), processes.end(),
@@ -300,11 +425,6 @@ private:
                 return;
             }
             else if (cmd == "process-smi") {
-                {
-                    std::lock_guard<std::recursive_mutex> lock(proc_mutex);
-                    simulate_tick();  // <- trigger a quick tick so logs update
-                }
-
                 Process snapshot;
                 {
                     std::lock_guard<std::recursive_mutex> lock(proc_mutex);
@@ -360,10 +480,68 @@ private:
         safe_cout(os.str());
     }
 
+    void execute_instruction(Process& p, int core_id) {
+        if (p.current_instruction >= p.instructions.size()){
+            p.finished = true;
+            p.state = Process::FINISHED;
+            p.logs.push_back(timestamp() + " Process finished execution.");
+            return;
+        } 
+
+        const Instruction& inst = p.instructions[p.current_instruction];
+
+        switch (inst.type) {
+            case InstructionType::PRINT:
+                p.logs.push_back(timestamp() + " PRINT: " + inst.message);
+                break;
+            case InstructionType::DECLARE:
+                p.set_variable(inst.var1, inst.value1);
+                p.logs.push_back(timestamp() + " DECLARE: " + inst.var1 + " = " + std::to_string(inst.value1));
+                break;
+            case InstructionType::ADD: {
+                std::uint16_t val2 = p.parse_operand(inst.var2);
+                std::uint16_t result = val2 + inst.value2;
+                p.set_variable(inst.var1, result);
+                p.logs.push_back(timestamp() + " ADD: " + inst.var1 + " = " + std::to_string(result));
+                break;
+            }
+            case InstructionType::SUBTRACT: {
+                std::uint16_t val2 = p.parse_operand(inst.var2);
+                std::uint16_t result = val2 - inst.value2;
+                p.set_variable(inst.var1, result);
+                p.logs.push_back(timestamp() + " SUBTRACT: " + inst.var1 + " = " + std::to_string(result));
+                break;
+            }
+            case InstructionType::SLEEP:
+                p.state = Process::SLEEPING;
+                p.sleep_remaining = inst.sleep_ticks;
+                p.logs.push_back(timestamp() + " SLEEP: for " + std::to_string(inst.sleep_ticks) + " ticks");
+                break;
+            default:
+                p.logs.push_back(timestamp() + " Unknown instruction type.");
+                break;
+        }
+
+        p.current_instruction++;
+        p.executed++;
+    }
+
     void simulate_tick() {
         std::lock_guard<std::recursive_mutex> lock(proc_mutex);
         tick_count++;
         batch_tick_counter++;
+
+        // Handle Processes in SLEEPING state
+        for (auto& p : processes) {
+            if (p.state == Process::SLEEPING) {
+                p.sleep_remaining--;
+                if (p.sleep_remaining <= 0) {
+                    p.state = Process::READY;
+                    ready_queue.push_back(find_process_by_id(p.id));
+                    p.logs.push_back(timestamp() + " Woke up from sleep");
+                }
+            }
+        }
 
         // Assign new processes if core is idle
         for (size_t i = 0; i < running.size(); ++i) {
