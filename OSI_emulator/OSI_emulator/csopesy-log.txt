@@ -241,3 +241,18 @@ ID	Name	State	RemainingIns
 1	p1	finished	0
 2	p2	finished	0
 ==================================
+===== CPU UTILIZATION REPORT =====
+Total CPU ticks: 216
+Cores: 2 used=0 readyQ=0
+Process summary:
+ID	Name	State	RemainingIns
+1	p1	finished	0
+==================================
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 10:57:51PM)
+Total CPU ticks: 76
+Cores: 2
+  p1 | ID: 1 | finished | Progress: 4/4
+  p2 | ID: 2 | finished | Progress: 4/4
+==================================
+

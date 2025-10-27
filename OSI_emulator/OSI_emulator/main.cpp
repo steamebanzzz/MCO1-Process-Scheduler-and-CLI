@@ -611,32 +611,25 @@ private:
             if (core != processes.end())
                 cores_used++;
 
-        // counts ready size of the queue
-        int ready_q_size = (int)ready_queue.size();
-
         std::ostringstream oss;
         oss << "===== CPU UTILIZATION REPORT =====\n";
+        oss << "Timestamp: " << timestamp() << "\n";
         oss << "Total CPU ticks: " << tick_count << "\n";
-        oss << "Cores: " << cfg.num_cpu
-            << " used=" << cores_used
-            << " readyQ=" << ready_q_size << "\n";
-        oss << "Process summary:\n";
-        oss << "ID\tName\tState\tRemainingIns\n";
+        oss << "Cores: " << cfg.num_cpu << "\n";
 
+        // List all processes with their status
         for (const auto& p : processes) {
-            int remaining = std::max(0, p.total_instructions - p.executed);
             std::string state_str;
             if (p.finished) state_str = "finished";
             else if (p.state == Process::RUNNING) state_str = "running";
             else state_str = "ready";
 
-            oss << p.id << "\t"
-                << p.name << "\t"
-                << state_str << "\t"
-                << remaining << "\n";
+            oss << "  " << p.name << " | ID: " << p.id 
+                << " | " << state_str 
+                << " | Progress: " << p.executed << "/" << p.total_instructions << "\n";
         }
 
-        oss << "==================================\n";
+        oss << "==================================\n\n";
 
         // Print to console
         std::cout << oss.str();
