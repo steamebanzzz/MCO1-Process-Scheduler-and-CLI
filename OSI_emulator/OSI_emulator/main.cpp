@@ -278,34 +278,42 @@ private:
 
     void list_processes() {
         std::lock_guard<std::recursive_mutex> lock(proc_mutex);
-        if (processes.empty()) { std::cout << "No processes available.\n"; return; }
+        if (processes.empty()) { 
+            std::cout << "No processes available.\n"; 
+            return; 
+        }
         
         int cores_used = 0;
         for (const auto& core : running)
             if (core != processes.end()) cores_used++;
         
-        std::cout << "CPU utilization: " << std::fixed << std::setprecision(2) 
-                  << (100.0 * cores_used / cfg.num_cpu) << "%\n";
+        std::cout << "CPU utilization: " << std::fixed << std::setprecision(0) 
+                << (100.0 * cores_used / cfg.num_cpu) << "%\n";
         std::cout << "Cores used: " << cores_used << "\n";
         std::cout << "Cores available: " << (cfg.num_cpu - cores_used) << "\n";
-        std::cout << "\nRunning processes:\n";
+        std::cout << "\n";
+        std::cout << "--------------------------------------\n";
+        std::cout << "Running processes:\n";
         
-        for (const auto& core : running) {
-            if (core != processes.end()) {
-                std::cout << core->name << "\t" << core->current_instruction 
-                         << "/" << core->instructions.size() << "\t" 
-                         << timestamp() << "\n";
+        // Show running processes with their core assignments
+        for (size_t i = 0; i < running.size(); ++i) {
+            if (running[i] != processes.end()) {
+                const auto& p = *running[i];
+                std::cout << p.name << "\t" << timestamp() 
+                        << "\tCore: " << i << "\t\t"
+                        << p.current_instruction << " / " << p.total_instructions << "\n";
             }
         }
         
         std::cout << "\nFinished processes:\n";
         for (const auto& p : processes) {
             if (p.finished) {
-                std::cout << p.name << "\t" << p.instructions.size() 
-                         << "/" << p.instructions.size() << "\t" 
-                         << timestamp() << "\n";
+                std::cout << p.name << "\t" << timestamp() 
+                        << "\tFinished\t\t" << p.total_instructions 
+                        << " / " << p.total_instructions << "\n";
             }
         }
+        std::cout << "--------------------------------------\n";
     }
 
     void reattach_process_cmd(std::istringstream& iss) {
@@ -330,7 +338,7 @@ private:
         // Always start with a PRINT instruction
         Instruction print_inst;
         print_inst.type = InstructionType::PRINT;
-        print_inst.message = "Hello world from " + name + "!";
+        print_inst.message = " Hello world from " + name + "!";
         instructions.push_back(print_inst);
 
         for (int i = 1; i < count; ++i) {
@@ -533,14 +541,11 @@ private:
         if (!p.loop_stack.empty()) {
             auto& current_loop = p.loop_stack.back();
             if (current_loop.index < current_loop.instructions.size()) {
-                // Execute instruction inside the loop
                 const auto& loop_inst = current_loop.instructions[current_loop.index];
                 execute_loop_instruction(p, loop_inst);
                 current_loop.index++;
-                p.executed++;
                 return; 
             } else {
-                // Loop body finished, check if we need to repeat
                 current_loop.repeats_itself--;
                 if (current_loop.repeats_itself > 0) {
                     current_loop.index = 0; // Reset loop body
@@ -552,7 +557,7 @@ private:
                     p.loop_stack.pop_back();
                     p.logs.push_back(timestamp() + " FOR: Loop completed");
                     p.current_instruction++;
-                    p.executed++;
+                    p.executed++; // Only increment once when the entire FOR loop completes
                     return;
                 }
             }
@@ -616,7 +621,6 @@ private:
         p.current_instruction++;
         p.executed++;
     }
-
 
     void execute_loop_instruction(Process& p, const Instruction& inst) {
         switch (inst.type) {

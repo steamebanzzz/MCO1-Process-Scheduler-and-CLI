@@ -364,3 +364,288 @@ Cores: 2
   p3 | ID: 3 | ready | Progress: 0/20
 ==================================
 
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:33:15PM)
+Total CPU ticks: 10
+Cores: 2
+  p1 | ID: 1 | running | Progress: 5/12
+  p2 | ID: 2 | ready | Progress: 3/20
+  p3 | ID: 3 | running | Progress: 1/20
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:39:03PM)
+Total CPU ticks: 20
+Cores: 2
+  p1 | ID: 1 | running | Progress: 11/12
+  p2 | ID: 2 | ready | Progress: 4/20
+  p3 | ID: 3 | running | Progress: 5/20
+  p4 | ID: 4 | ready | Progress: 3/13
+  p5 | ID: 5 | ready | Progress: 2/20
+  p6 | ID: 6 | ready | Progress: 0/12
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:48:47PM)
+Total CPU ticks: 24
+Cores: 2
+  p1 | ID: 1 | ready | Progress: 9/11
+  p2 | ID: 2 | ready | Progress: 4/19
+  p3 | ID: 3 | running | Progress: 6/10
+  p4 | ID: 4 | ready | Progress: 4/18
+  p5 | ID: 5 | running | Progress: 3/17
+  p6 | ID: 6 | ready | Progress: 2/16
+  p7 | ID: 7 | ready | Progress: 0/17
+  p8 | ID: 8 | ready | Progress: 0/17
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:57:33PM)
+Total CPU ticks: 86
+Cores: 2
+  p1 | ID: 1 | ready | Progress: 36/20
+  p2 | ID: 2 | finished | Progress: 59/17
+  p3 | ID: 3 | ready | Progress: 28/20
+  p4 | ID: 4 | running | Progress: 4/13
+  p5 | ID: 5 | running | Progress: 2/18
+  p6 | ID: 6 | ready | Progress: 0/18
+  p7 | ID: 7 | ready | Progress: 0/19
+  p8 | ID: 8 | ready | Progress: 0/12
+  p9 | ID: 9 | ready | Progress: 0/13
+  p10 | ID: 10 | ready | Progress: 0/15
+  p11 | ID: 11 | ready | Progress: 0/14
+  p12 | ID: 12 | ready | Progress: 0/16
+  p13 | ID: 13 | ready | Progress: 0/14
+  p14 | ID: 14 | ready | Progress: 0/18
+  p15 | ID: 15 | ready | Progress: 0/16
+  p16 | ID: 16 | ready | Progress: 0/13
+  p17 | ID: 17 | ready | Progress: 0/14
+  p18 | ID: 18 | ready | Progress: 0/14
+  p19 | ID: 19 | ready | Progress: 0/13
+  p20 | ID: 20 | ready | Progress: 0/13
+  p21 | ID: 21 | ready | Progress: 0/10
+  p22 | ID: 22 | ready | Progress: 0/11
+  p23 | ID: 23 | ready | Progress: 0/18
+  p24 | ID: 24 | ready | Progress: 0/19
+  p25 | ID: 25 | ready | Progress: 0/18
+  p26 | ID: 26 | ready | Progress: 0/18
+  p27 | ID: 27 | ready | Progress: 0/13
+  p28 | ID: 28 | ready | Progress: 0/15
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/28/2025 12:02:00AM)
+Total CPU ticks: 40
+Cores: 2
+  p1 | ID: 1 | running | Progress: 4/13
+  p2 | ID: 2 | running | Progress: 7/18
+  p3 | ID: 3 | ready | Progress: 0/16
+  p4 | ID: 4 | ready | Progress: 0/13
+  p5 | ID: 5 | ready | Progress: 0/16
+  p6 | ID: 6 | ready | Progress: 0/12
+  p7 | ID: 7 | ready | Progress: 0/18
+  p8 | ID: 8 | ready | Progress: 0/14
+  p9 | ID: 9 | ready | Progress: 0/10
+  p10 | ID: 10 | ready | Progress: 0/20
+  p11 | ID: 11 | ready | Progress: 0/10
+  p12 | ID: 12 | ready | Progress: 0/14
+  p13 | ID: 13 | ready | Progress: 0/18
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/28/2025 12:02:11AM)
+Total CPU ticks: 100
+Cores: 2
+  p1 | ID: 1 | finished | Progress: 13/13
+  p2 | ID: 2 | finished | Progress: 18/18
+  p3 | ID: 3 | running | Progress: 3/16
+  p4 | ID: 4 | running | Progress: 1/13
+  p5 | ID: 5 | ready | Progress: 0/16
+  p6 | ID: 6 | ready | Progress: 0/12
+  p7 | ID: 7 | ready | Progress: 0/18
+  p8 | ID: 8 | ready | Progress: 0/14
+  p9 | ID: 9 | ready | Progress: 0/10
+  p10 | ID: 10 | ready | Progress: 0/20
+  p11 | ID: 11 | ready | Progress: 0/10
+  p12 | ID: 12 | ready | Progress: 0/14
+  p13 | ID: 13 | ready | Progress: 0/18
+  p14 | ID: 14 | ready | Progress: 0/19
+  p15 | ID: 15 | ready | Progress: 0/11
+  p16 | ID: 16 | ready | Progress: 0/15
+  p17 | ID: 17 | ready | Progress: 0/10
+  p18 | ID: 18 | ready | Progress: 0/12
+  p19 | ID: 19 | ready | Progress: 0/14
+  p20 | ID: 20 | ready | Progress: 0/19
+  p21 | ID: 21 | ready | Progress: 0/20
+  p22 | ID: 22 | ready | Progress: 0/13
+  p23 | ID: 23 | ready | Progress: 0/20
+  p24 | ID: 24 | ready | Progress: 0/11
+  p25 | ID: 25 | ready | Progress: 0/17
+  p26 | ID: 26 | ready | Progress: 0/16
+  p27 | ID: 27 | ready | Progress: 0/20
+  p28 | ID: 28 | ready | Progress: 0/14
+  p29 | ID: 29 | ready | Progress: 0/10
+  p30 | ID: 30 | ready | Progress: 0/14
+  p31 | ID: 31 | ready | Progress: 0/10
+  p32 | ID: 32 | ready | Progress: 0/10
+  p33 | ID: 33 | ready | Progress: 0/15
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/28/2025 12:02:55AM)
+Total CPU ticks: 100
+Cores: 2
+  p1 | ID: 1 | finished | Progress: 13/13
+  p2 | ID: 2 | finished | Progress: 18/18
+  p3 | ID: 3 | running | Progress: 3/16
+  p4 | ID: 4 | running | Progress: 1/13
+  p5 | ID: 5 | ready | Progress: 0/16
+  p6 | ID: 6 | ready | Progress: 0/12
+  p7 | ID: 7 | ready | Progress: 0/18
+  p8 | ID: 8 | ready | Progress: 0/14
+  p9 | ID: 9 | ready | Progress: 0/10
+  p10 | ID: 10 | ready | Progress: 0/20
+  p11 | ID: 11 | ready | Progress: 0/10
+  p12 | ID: 12 | ready | Progress: 0/14
+  p13 | ID: 13 | ready | Progress: 0/18
+  p14 | ID: 14 | ready | Progress: 0/19
+  p15 | ID: 15 | ready | Progress: 0/11
+  p16 | ID: 16 | ready | Progress: 0/15
+  p17 | ID: 17 | ready | Progress: 0/10
+  p18 | ID: 18 | ready | Progress: 0/12
+  p19 | ID: 19 | ready | Progress: 0/14
+  p20 | ID: 20 | ready | Progress: 0/19
+  p21 | ID: 21 | ready | Progress: 0/20
+  p22 | ID: 22 | ready | Progress: 0/13
+  p23 | ID: 23 | ready | Progress: 0/20
+  p24 | ID: 24 | ready | Progress: 0/11
+  p25 | ID: 25 | ready | Progress: 0/17
+  p26 | ID: 26 | ready | Progress: 0/16
+  p27 | ID: 27 | ready | Progress: 0/20
+  p28 | ID: 28 | ready | Progress: 0/14
+  p29 | ID: 29 | ready | Progress: 0/10
+  p30 | ID: 30 | ready | Progress: 0/14
+  p31 | ID: 31 | ready | Progress: 0/10
+  p32 | ID: 32 | ready | Progress: 0/10
+  p33 | ID: 33 | ready | Progress: 0/15
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/28/2025 12:03:04AM)
+Total CPU ticks: 101
+Cores: 2
+  p1 | ID: 1 | finished | Progress: 13/13
+  p2 | ID: 2 | finished | Progress: 18/18
+  p3 | ID: 3 | running | Progress: 4/16
+  p4 | ID: 4 | running | Progress: 1/13
+  p5 | ID: 5 | ready | Progress: 0/16
+  p6 | ID: 6 | ready | Progress: 0/12
+  p7 | ID: 7 | ready | Progress: 0/18
+  p8 | ID: 8 | ready | Progress: 0/14
+  p9 | ID: 9 | ready | Progress: 0/10
+  p10 | ID: 10 | ready | Progress: 0/20
+  p11 | ID: 11 | ready | Progress: 0/10
+  p12 | ID: 12 | ready | Progress: 0/14
+  p13 | ID: 13 | ready | Progress: 0/18
+  p14 | ID: 14 | ready | Progress: 0/19
+  p15 | ID: 15 | ready | Progress: 0/11
+  p16 | ID: 16 | ready | Progress: 0/15
+  p17 | ID: 17 | ready | Progress: 0/10
+  p18 | ID: 18 | ready | Progress: 0/12
+  p19 | ID: 19 | ready | Progress: 0/14
+  p20 | ID: 20 | ready | Progress: 0/19
+  p21 | ID: 21 | ready | Progress: 0/20
+  p22 | ID: 22 | ready | Progress: 0/13
+  p23 | ID: 23 | ready | Progress: 0/20
+  p24 | ID: 24 | ready | Progress: 0/11
+  p25 | ID: 25 | ready | Progress: 0/17
+  p26 | ID: 26 | ready | Progress: 0/16
+  p27 | ID: 27 | ready | Progress: 0/20
+  p28 | ID: 28 | ready | Progress: 0/14
+  p29 | ID: 29 | ready | Progress: 0/10
+  p30 | ID: 30 | ready | Progress: 0/14
+  p31 | ID: 31 | ready | Progress: 0/10
+  p32 | ID: 32 | ready | Progress: 0/10
+  p33 | ID: 33 | ready | Progress: 0/15
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/28/2025 12:03:25AM)
+Total CPU ticks: 102
+Cores: 2
+  p1 | ID: 1 | finished | Progress: 13/13
+  p2 | ID: 2 | finished | Progress: 18/18
+  p3 | ID: 3 | ready | Progress: 5/16
+  p4 | ID: 4 | running | Progress: 1/13
+  p5 | ID: 5 | running | Progress: 0/16
+  p6 | ID: 6 | ready | Progress: 0/12
+  p7 | ID: 7 | ready | Progress: 0/18
+  p8 | ID: 8 | ready | Progress: 0/14
+  p9 | ID: 9 | ready | Progress: 0/10
+  p10 | ID: 10 | ready | Progress: 0/20
+  p11 | ID: 11 | ready | Progress: 0/10
+  p12 | ID: 12 | ready | Progress: 0/14
+  p13 | ID: 13 | ready | Progress: 0/18
+  p14 | ID: 14 | ready | Progress: 0/19
+  p15 | ID: 15 | ready | Progress: 0/11
+  p16 | ID: 16 | ready | Progress: 0/15
+  p17 | ID: 17 | ready | Progress: 0/10
+  p18 | ID: 18 | ready | Progress: 0/12
+  p19 | ID: 19 | ready | Progress: 0/14
+  p20 | ID: 20 | ready | Progress: 0/19
+  p21 | ID: 21 | ready | Progress: 0/20
+  p22 | ID: 22 | ready | Progress: 0/13
+  p23 | ID: 23 | ready | Progress: 0/20
+  p24 | ID: 24 | ready | Progress: 0/11
+  p25 | ID: 25 | ready | Progress: 0/17
+  p26 | ID: 26 | ready | Progress: 0/16
+  p27 | ID: 27 | ready | Progress: 0/20
+  p28 | ID: 28 | ready | Progress: 0/14
+  p29 | ID: 29 | ready | Progress: 0/10
+  p30 | ID: 30 | ready | Progress: 0/14
+  p31 | ID: 31 | ready | Progress: 0/10
+  p32 | ID: 32 | ready | Progress: 0/10
+  p33 | ID: 33 | ready | Progress: 0/15
+  p34 | ID: 34 | ready | Progress: 0/12
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/28/2025 12:03:39AM)
+Total CPU ticks: 104
+Cores: 2
+  p1 | ID: 1 | finished | Progress: 13/13
+  p2 | ID: 2 | finished | Progress: 18/18
+  p3 | ID: 3 | ready | Progress: 5/16
+  p4 | ID: 4 | running | Progress: 1/13
+  p5 | ID: 5 | running | Progress: 1/16
+  p6 | ID: 6 | ready | Progress: 0/12
+  p7 | ID: 7 | ready | Progress: 0/18
+  p8 | ID: 8 | ready | Progress: 0/14
+  p9 | ID: 9 | ready | Progress: 0/10
+  p10 | ID: 10 | ready | Progress: 0/20
+  p11 | ID: 11 | ready | Progress: 0/10
+  p12 | ID: 12 | ready | Progress: 0/14
+  p13 | ID: 13 | ready | Progress: 0/18
+  p14 | ID: 14 | ready | Progress: 0/19
+  p15 | ID: 15 | ready | Progress: 0/11
+  p16 | ID: 16 | ready | Progress: 0/15
+  p17 | ID: 17 | ready | Progress: 0/10
+  p18 | ID: 18 | ready | Progress: 0/12
+  p19 | ID: 19 | ready | Progress: 0/14
+  p20 | ID: 20 | ready | Progress: 0/19
+  p21 | ID: 21 | ready | Progress: 0/20
+  p22 | ID: 22 | ready | Progress: 0/13
+  p23 | ID: 23 | ready | Progress: 0/20
+  p24 | ID: 24 | ready | Progress: 0/11
+  p25 | ID: 25 | ready | Progress: 0/17
+  p26 | ID: 26 | ready | Progress: 0/16
+  p27 | ID: 27 | ready | Progress: 0/20
+  p28 | ID: 28 | ready | Progress: 0/14
+  p29 | ID: 29 | ready | Progress: 0/10
+  p30 | ID: 30 | ready | Progress: 0/14
+  p31 | ID: 31 | ready | Progress: 0/10
+  p32 | ID: 32 | ready | Progress: 0/10
+  p33 | ID: 33 | ready | Progress: 0/15
+  p34 | ID: 34 | ready | Progress: 0/12
+==================================
+
