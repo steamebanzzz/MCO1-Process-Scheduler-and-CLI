@@ -1,7 +1,7 @@
 num-cpu 2
-scheduler fcfs
+scheduler rr
 quantum-cycles 2
-batch-process-freq 0
-min-ins 4
-max-ins 4
+batch-process-freq 3
+min-ins 10
+max-ins 20
 delay-per-exec 0

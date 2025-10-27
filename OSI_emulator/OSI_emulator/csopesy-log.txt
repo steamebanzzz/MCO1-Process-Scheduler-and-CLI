@@ -256,3 +256,111 @@ Cores: 2
   p2 | ID: 2 | finished | Progress: 4/4
 ==================================
 
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:05:49PM)
+Total CPU ticks: 20
+Cores: 2
+  p1 | ID: 1 | finished | Progress: 4/4
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:09:58PM)
+Total CPU ticks: 27
+Cores: 2
+  p1 | ID: 1 | running | Progress: 14/17
+  p2 | ID: 2 | finished | Progress: 10/10
+  p3 | ID: 3 | ready | Progress: 8/12
+  p4 | ID: 4 | ready | Progress: 6/15
+  p5 | ID: 5 | ready | Progress: 4/14
+  p6 | ID: 6 | ready | Progress: 2/17
+  p7 | ID: 7 | running | Progress: 1/11
+  p8 | ID: 8 | ready | Progress: 0/17
+  p9 | ID: 9 | ready | Progress: 0/12
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:11:15PM)
+Total CPU ticks: 27
+Cores: 2
+  p1 | ID: 1 | running | Progress: 14/17
+  p2 | ID: 2 | finished | Progress: 10/10
+  p3 | ID: 3 | ready | Progress: 8/12
+  p4 | ID: 4 | ready | Progress: 6/15
+  p5 | ID: 5 | ready | Progress: 4/14
+  p6 | ID: 6 | ready | Progress: 2/17
+  p7 | ID: 7 | running | Progress: 1/11
+  p8 | ID: 8 | ready | Progress: 0/17
+  p9 | ID: 9 | ready | Progress: 0/12
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:12:23PM)
+Total CPU ticks: 27
+Cores: 2
+  p1 | ID: 1 | running | Progress: 14/17
+  p2 | ID: 2 | finished | Progress: 10/10
+  p3 | ID: 3 | ready | Progress: 8/12
+  p4 | ID: 4 | ready | Progress: 6/15
+  p5 | ID: 5 | ready | Progress: 4/14
+  p6 | ID: 6 | ready | Progress: 2/17
+  p7 | ID: 7 | running | Progress: 1/11
+  p8 | ID: 8 | ready | Progress: 0/17
+  p9 | ID: 9 | ready | Progress: 0/12
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:14:13PM)
+Total CPU ticks: 28
+Cores: 2
+  p1 | ID: 1 | running | Progress: 15/17
+  p2 | ID: 2 | finished | Progress: 10/10
+  p3 | ID: 3 | ready | Progress: 8/12
+  p4 | ID: 4 | ready | Progress: 6/15
+  p5 | ID: 5 | ready | Progress: 4/14
+  p6 | ID: 6 | running | Progress: 2/17
+  p7 | ID: 7 | ready | Progress: 2/11
+  p8 | ID: 8 | ready | Progress: 0/17
+  p9 | ID: 9 | ready | Progress: 0/12
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:19:55PM)
+Total CPU ticks: 8
+Cores: 2
+  p1 | ID: 1 | running | Progress: 5/15
+  p2 | ID: 2 | running | Progress: 2/18
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:20:10PM)
+Total CPU ticks: 8
+Cores: 2
+  p1 | ID: 1 | running | Progress: 5/15
+  p2 | ID: 2 | running | Progress: 2/18
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:29:47PM)
+Total CPU ticks: 8
+Cores: 2
+  p1 | ID: 1 | running | Progress: 4/12
+  p2 | ID: 2 | running | Progress: 2/20
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:29:58PM)
+Total CPU ticks: 8
+Cores: 2
+  p1 | ID: 1 | running | Progress: 4/12
+  p2 | ID: 2 | running | Progress: 2/20
+==================================
+
+===== CPU UTILIZATION REPORT =====
+Timestamp: (10/27/2025 11:30:05PM)
+Total CPU ticks: 9
+Cores: 2
+  p1 | ID: 1 | running | Progress: 4/12
+  p2 | ID: 2 | ready | Progress: 3/20
+  p3 | ID: 3 | ready | Progress: 0/20
+==================================
+

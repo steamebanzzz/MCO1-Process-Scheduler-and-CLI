@@ -363,9 +363,48 @@ private:
                     inst.type = InstructionType::SLEEP;
                     inst.sleep_ticks = sleep_dist(rng);
                     break;
+                case 5: // FOR LOOP
+                case 6: {
+                    inst.type = InstructionType::FOR_START;
+                    inst.for_repeats = for_dist(rng);
+                    
+                    std::uniform_int_distribution<int> body_size(2, 4);
+                    int body_count = body_size(rng);
+                    
+                    for (int j = 0; j < body_count; ++j) {
+                        Instruction body_inst;
+                        int body_type = type_dist(rng) % 4; 
+                        
+                        switch (body_type) {
+                            case 0:
+                                body_inst.type = InstructionType::PRINT;
+                                body_inst.message = "Loop iteration from " + name;
+                                break;
+                            case 1:
+                                body_inst.type = InstructionType::DECLARE;
+                                body_inst.var1 = "loop_var" + std::to_string(i) + "_" + std::to_string(j);
+                                body_inst.value1 = value_dist(rng);
+                                break;
+                            case 2:
+                                body_inst.type = InstructionType::ADD;
+                                body_inst.var1 = "loop_result" + std::to_string(i) + "_" + std::to_string(j);
+                                body_inst.var2 = "var" + std::to_string(std::max(1, i-1));
+                                body_inst.value2 = value_dist(rng);
+                                break;
+                            case 3:
+                                body_inst.type = InstructionType::SUBTRACT;
+                                body_inst.var1 = "loop_result" + std::to_string(i) + "_" + std::to_string(j);
+                                body_inst.var2 = "var" + std::to_string(std::max(1, i-1));
+                                body_inst.value2 = value_dist(rng);
+                                break;
+                        }
+                        inst.for_instructions.push_back(body_inst);
+                    }
+                    break;
+                }
                 default: // Default to PRINT
                     inst.type = InstructionType::PRINT;
-                    inst.message = "Hello world from " + name + "!";
+                    inst.message = " Hello world from " + name + "!";
                     break;
             }
             instructions.push_back(inst);
@@ -383,7 +422,7 @@ private:
         p.current_instruction = 0;
         p.executed = 0;
         p.total_instructions = p.instructions.size();
-        p.logs.push_back(timestamp() + " Process created");
+        p.logs.push_back(timestamp() + "Hello world from " + name + "!");
         processes.push_back(std::move(p));
 
         auto it = processes.end();
@@ -481,23 +520,54 @@ private:
     }
 
     void execute_instruction(Process& p, int core_id) {
-        if (p.current_instruction >= p.instructions.size()){
+        if (p.current_instruction >= p.instructions.size()) {
             p.finished = true;
             p.state = Process::FINISHED;
             p.logs.push_back(timestamp() + " Process finished execution.");
             return;
-        } 
+        }
 
         const Instruction& inst = p.instructions[p.current_instruction];
+
+        // Handle FOR loops
+        if (!p.loop_stack.empty()) {
+            auto& current_loop = p.loop_stack.back();
+            if (current_loop.index < current_loop.instructions.size()) {
+                // Execute instruction inside the loop
+                const auto& loop_inst = current_loop.instructions[current_loop.index];
+                execute_loop_instruction(p, loop_inst);
+                current_loop.index++;
+                p.executed++;
+                return; 
+            } else {
+                // Loop body finished, check if we need to repeat
+                current_loop.repeats_itself--;
+                if (current_loop.repeats_itself > 0) {
+                    current_loop.index = 0; // Reset loop body
+                    p.logs.push_back(timestamp() + " FOR: Starting iteration " + 
+                                    std::to_string(inst.for_repeats - current_loop.repeats_itself + 1));
+                    return;
+                } else {
+                    // Loop completely finished
+                    p.loop_stack.pop_back();
+                    p.logs.push_back(timestamp() + " FOR: Loop completed");
+                    p.current_instruction++;
+                    p.executed++;
+                    return;
+                }
+            }
+        }
 
         switch (inst.type) {
             case InstructionType::PRINT:
                 p.logs.push_back(timestamp() + " PRINT: " + inst.message);
                 break;
+                
             case InstructionType::DECLARE:
                 p.set_variable(inst.var1, inst.value1);
                 p.logs.push_back(timestamp() + " DECLARE: " + inst.var1 + " = " + std::to_string(inst.value1));
                 break;
+                
             case InstructionType::ADD: {
                 std::uint16_t val2 = p.parse_operand(inst.var2);
                 std::uint16_t result = val2 + inst.value2;
@@ -505,18 +575,39 @@ private:
                 p.logs.push_back(timestamp() + " ADD: " + inst.var1 + " = " + std::to_string(result));
                 break;
             }
+            
             case InstructionType::SUBTRACT: {
                 std::uint16_t val2 = p.parse_operand(inst.var2);
-                std::uint16_t result = val2 - inst.value2;
+                std::uint16_t result = (val2 >= inst.value2) ? val2 - inst.value2 : 0;
                 p.set_variable(inst.var1, result);
                 p.logs.push_back(timestamp() + " SUBTRACT: " + inst.var1 + " = " + std::to_string(result));
                 break;
             }
+            
             case InstructionType::SLEEP:
                 p.state = Process::SLEEPING;
                 p.sleep_remaining = inst.sleep_ticks;
                 p.logs.push_back(timestamp() + " SLEEP: for " + std::to_string(inst.sleep_ticks) + " ticks");
                 break;
+                
+            case InstructionType::FOR_START: {
+                // Start a new FOR loop
+                if (p.loop_stack.size() >= 3) {
+                    p.logs.push_back(timestamp() + " FOR: Maximum nesting level reached, skipping");
+                    break;
+                }
+                
+                Process::LoopContext loop;
+                loop.start = p.current_instruction;
+                loop.repeats_itself = inst.for_repeats;
+                loop.instructions = inst.for_instructions;
+                loop.index = 0;
+                
+                p.loop_stack.push_back(loop);
+                p.logs.push_back(timestamp() + " FOR: Starting loop with " + std::to_string(inst.for_repeats) + " iterations");
+                return; 
+            }
+            
             default:
                 p.logs.push_back(timestamp() + " Unknown instruction type.");
                 break;
@@ -524,6 +615,40 @@ private:
 
         p.current_instruction++;
         p.executed++;
+    }
+
+
+    void execute_loop_instruction(Process& p, const Instruction& inst) {
+        switch (inst.type) {
+            case InstructionType::PRINT:
+                p.logs.push_back(timestamp() + " PRINT (in loop): " + inst.message);
+                break;
+                
+            case InstructionType::DECLARE:
+                p.set_variable(inst.var1, inst.value1);
+                p.logs.push_back(timestamp() + " DECLARE (in loop): " + inst.var1 + " = " + std::to_string(inst.value1));
+                break;
+                
+            case InstructionType::ADD: {
+                std::uint16_t val2 = p.parse_operand(inst.var2);
+                std::uint16_t result = val2 + inst.value2;
+                p.set_variable(inst.var1, result);
+                p.logs.push_back(timestamp() + " ADD (in loop): " + inst.var1 + " = " + std::to_string(result));
+                break;
+            }
+            
+            case InstructionType::SUBTRACT: {
+                std::uint16_t val2 = p.parse_operand(inst.var2);
+                std::uint16_t result = (val2 >= inst.value2) ? val2 - inst.value2 : 0;
+                p.set_variable(inst.var1, result);
+                p.logs.push_back(timestamp() + " SUBTRACT (in loop): " + inst.var1 + " = " + std::to_string(result));
+                break;
+            }
+            
+            default:
+                p.logs.push_back(timestamp() + " Unknown loop instruction.");
+                break;
+        }
     }
 
     void simulate_tick() {
@@ -551,7 +676,7 @@ private:
                     ready_queue.pop_front();
                     running[i]->state = Process::RUNNING;
                     quantum_left[i] = (cfg.scheduler == "rr") ? cfg.quantum_cycles : INT_MAX;
-                    running[i]->logs.push_back(timestamp() + " Dispatched " + running[i]->name + " to core " + std::to_string(i));
+                    running[i]->logs.push_back(timestamp() + " Dispatched to core " + std::to_string(i));
                 }
             }
         }
@@ -560,38 +685,51 @@ private:
         for (size_t i = 0; i < running.size(); ++i) {
             if (running[i] != processes.end()) {
                 Process& p = *running[i];
-                p.executed++;
+                
+                // Handle delay per execution
+                if (p.delay_remaining > 0) {
+                    p.delay_remaining--;
+                    continue;
+                }
+                
+                // Execute the actual instruction
+                execute_instruction(p, i);
                 quantum_left[i]--;
 
-                p.logs.push_back(timestamp() + " Core " + std::to_string(i) + 
-                                " executed 1 instr of " + p.name);
+                if (cfg.delay_per_exec > 0) {
+                    p.delay_remaining = cfg.delay_per_exec - 1;
+                }
 
                 // Check if process finished
-                if (p.executed >= p.total_instructions) {
+                if (p.current_instruction >= p.instructions.size() && p.loop_stack.empty()) {
                     p.finished = true;
                     p.state = Process::FINISHED;
                     running[i] = processes.end();
-                    p.logs.push_back(timestamp() + " " + p.name + 
-                                    " finished on core " + std::to_string(i));
+                    p.logs.push_back(timestamp() + " Process finished on core " + std::to_string(i));
                 }
-                // Round Robin: quantum expired, then preempt
-                else if (cfg.scheduler == "rr" && quantum_left[i] <= 0) {
-                    p.logs.push_back(timestamp() + " " + p.name + 
-                                    " preempted on core " + std::to_string(i));
+                // Round Robin: quantum expired and not sleeping
+                else if (cfg.scheduler == "rr" && quantum_left[i] <= 0 && p.state != Process::SLEEPING) {
+                    p.logs.push_back(timestamp() + " Preempted on core " + std::to_string(i));
                     p.state = Process::READY;
                     ready_queue.push_back(find_process_by_id(p.id));
                     running[i] = processes.end();
                 }
+                // Process went to sleep
+                else if (p.state == Process::SLEEPING) {
+                    running[i] = processes.end();
+                }
             }
-            // If core is now idle, assign next process
+        }
+
+        // Try to assign processes to newly available cores
+        for (size_t i = 0; i < running.size(); ++i) {
             if (running[i] == processes.end() && !ready_queue.empty()) {
                 auto next_proc = ready_queue.front();
                 ready_queue.pop_front();
                 next_proc->state = Process::RUNNING;
                 running[i] = next_proc;
                 quantum_left[i] = (cfg.scheduler == "rr") ? cfg.quantum_cycles : INT_MAX;
-                next_proc->logs.push_back(timestamp() + " Dispatched " + next_proc->name +
-                                        " to core " + std::to_string(i));
+                next_proc->logs.push_back(timestamp() + " Dispatched to core " + std::to_string(i));
             }
         }
         
