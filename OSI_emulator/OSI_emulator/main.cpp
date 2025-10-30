@@ -14,6 +14,7 @@
 #include <mutex>
 #include <ctime>
 #include <deque>
+#include <iomanip>
 // #include <sec_api/time_s.h>
 
 struct Config {
@@ -105,6 +106,10 @@ struct Process {
     int priority = 0;   // this is for priority scheduling (not implemented)
     std::vector<std::string> logs;
     std::vector<std::string> ins_types = { "LOAD", "STORE", "ADD", "SUB", "MUL", "DIV", "JMP", "CMP" };
+
+    // P9
+	long long created_tick = 0;
+	long long terminated_tick = -1;
 
     std::map<std::string, std::uint16_t> variables;
     int sleep_remaining = 0;
@@ -433,6 +438,10 @@ private:
         p.logs.push_back(timestamp() + "Hello world from " + name + "!");
         processes.push_back(std::move(p));
 
+        // P9
+		p.created_tick = tick_count;    // stamp creation tick
+		p.terminated_tick = -1;         // not finished yet
+
         auto it = processes.end();
         --it;
         ready_queue.push_back(it);
@@ -708,6 +717,7 @@ private:
                 if (p.current_instruction >= p.instructions.size() && p.loop_stack.empty()) {
                     p.finished = true;
                     p.state = Process::FINISHED;
+					p.terminated_tick = tick_count; // P9: stamp termination tick
                     running[i] = processes.end();
                     p.logs.push_back(timestamp() + " Process finished on core " + std::to_string(i));
                 }
@@ -747,31 +757,78 @@ private:
     void report_util() {
         std::lock_guard<std::recursive_mutex> lock(proc_mutex);
 
-        // counts how many cores are used
+        // Counts
+        int total = 0, running_cnt = 0, finished_cnt = 0;
+        long long tat_sum = 0;
+
+        for (const auto& p : processes) {
+            total++;
+            if (p.finished) {
+                finished_cnt++;
+                if (p.terminated_tick >= 0) {
+                    tat_sum += (p.terminated_tick - p.created_tick);
+                }
+            }
+            else if (p.state == Process::RUNNING) {
+                running_cnt++;
+            }
+		}
+
+        // Cores
         int cores_used = 0;
         for (const auto& core : running)
             if (core != processes.end())
                 cores_used++;
 
+        double cpu_util = (cfg.num_cpu > 0) ? (100.0 * cores_used / cfg.num_cpu) : 0.0;
+        double throughput = (tick_count > 0) ? (static_cast<double>(finished_cnt) / tick_count) : 0.0;
+        double avg_tat = (finished_cnt > 0) ? (static_cast<double>(tat_sum) / finished_cnt) : 0.0;
+
+		// Report string
         std::ostringstream oss;
-        oss << "===== CPU UTILIZATION REPORT =====\n";
+        oss << "===== CPU UTILIZATION REPORT (with Runtime Stats) =====\n";
         oss << "Timestamp: " << timestamp() << "\n";
         oss << "Total CPU ticks: " << tick_count << "\n";
-        oss << "Cores: " << cfg.num_cpu << "\n";
+        oss << "Cores: " << cfg.num_cpu << " | Busy: " << cores_used
+            << " | Idle: " << (cfg.num_cpu - cores_used) << "\n";
+        oss << std::fixed << std::setprecision(2);
+		oss << "CPU Utilization: " << cpu_util << "%\n";
+		oss << "Throughput: " << throughput << " processes/tick\n";
+		oss << "Average TAT: " << avg_tat << " ticks\n";
+        oss << "Process Counts -> Total: " << total
+            << " | Running: " << running_cnt
+			<< " | Finished: " << finished_cnt << "\n";
+		oss << "======================================================\n";
 
         // List all processes with their status
+        oss << std::left;
+        oss << std::setw(8) << "Process"
+            << " | " << std::setw(4) << "ID"
+            << " | " << std::setw(10) << "State"
+            << " | " << std::setw(12) << "Progress"
+            << " | " << "TAT\n";
+		oss << "------------------------------------------------------\n";
+
         for (const auto& p : processes) {
             std::string state_str;
             if (p.finished) state_str = "finished";
             else if (p.state == Process::RUNNING) state_str = "running";
+			else if (p.state == Process::SLEEPING) state_str = "sleeping"; // added sleeping state
             else state_str = "ready";
 
-            oss << "  " << p.name << " | ID: " << p.id 
-                << " | " << state_str 
-                << " | Progress: " << p.executed << "/" << p.total_instructions << "\n";
+            // Compute per-process tat if finished
+			std::string tat_str = "-";
+            if (p.finished && p.terminated_tick >= 0)
+				tat_str = std::to_string(p.terminated_tick - p.created_tick);
+
+            oss << std::setw(8) << p.name
+                << " | " << std::setw(4) << p.id
+                << " | " << std::setw(10) << state_str
+                << " | " << std::setw(12) << (std::to_string(p.executed) + "/" + std::to_string(p.total_instructions))
+				<< " | " << tat_str << "\n";
         }
 
-        oss << "==================================\n\n";
+        oss << "======================================================\n";
 
         // Print to console
         std::cout << oss.str();
