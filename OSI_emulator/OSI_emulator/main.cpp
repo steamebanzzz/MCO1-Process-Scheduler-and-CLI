@@ -251,9 +251,16 @@ private:
             return;
         }
         initialized = true;
+
         // Initialize running and quantum_left vectors based on num_cpu
         running = std::vector<std::list<Process>::iterator>(cfg.num_cpu, processes.end());
         quantum_left = std::vector<int>(cfg.num_cpu, 0);
+
+        // Resets
+		auto_process_counter = 1;
+		tick_count = 0;
+		batch_tick_counter = 0;
+
         std::cout << "Initialized successfully from " << fname << "\n";
         std::cout << "num-cpu: " << cfg.num_cpu << " | scheduler: " << cfg.scheduler << "\n";
     }
@@ -747,9 +754,18 @@ private:
             }
         }
         
+        // Skip exisiting process names
         if (cfg.batch_process_freq > 0 && batch_tick_counter >= cfg.batch_process_freq) {
             batch_tick_counter = 0;
-            add_process_locked("p" + std::to_string(auto_process_counter++));
+
+			std::lock_guard<std::recursive_mutex> lock(proc_mutex); // thread safety
+
+            std::string name;
+            do {
+                name = "p" + std::to_string(auto_process_counter++);
+			} while (find_process_by_name(name) != processes.end());
+
+            add_process_locked(name);
         }
     }
 
