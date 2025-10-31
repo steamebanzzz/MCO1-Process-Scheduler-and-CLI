@@ -452,7 +452,7 @@ private:
         p.current_instruction = 0;
         p.executed = 0;
         p.total_instructions = p.instructions.size();
-        p.logs.push_back(timestamp() + "Hello world from " + name + "!");
+        p.logs.push_back(timestamp() + " Hello world from " + name + "!");
         processes.push_back(std::move(p));
 
         // P9
@@ -620,10 +620,16 @@ private:
             }
             
             case InstructionType::SLEEP:
-                p.state = Process::SLEEPING;
-                p.sleep_remaining = inst.sleep_ticks;
-                p.logs.push_back(timestamp() + " SLEEP: for " + std::to_string(inst.sleep_ticks) + " ticks");
+                if (cfg.scheduler == "rr") {
+                    p.state = Process::SLEEPING;
+                    p.sleep_remaining = inst.sleep_ticks;
+                    p.logs.push_back(timestamp() + " SLEEP: for " + std::to_string(inst.sleep_ticks) + " ticks");
+                }
+                else {
+                    p.logs.push_back(timestamp() + " [FCFS MODE] Ignored SLEEP instruction.");
+                }
                 break;
+
                 
             case InstructionType::FOR_START: {
                 // Start a new FOR loop
@@ -697,11 +703,18 @@ private:
         // Handle Processes in SLEEPING state
         for (auto& p : processes) {
             if (p.state == Process::SLEEPING) {
-                p.sleep_remaining--;
-                if (p.sleep_remaining <= 0) {
+                if (cfg.scheduler == "rr") {
+                    p.sleep_remaining--;
+                    if (p.sleep_remaining <= 0) {
+                        p.state = Process::READY;
+                        ready_queue.push_back(find_process_by_id(p.id));
+                        p.logs.push_back(timestamp() + " Woke up from sleep");
+                    }
+                }
+                else {
                     p.state = Process::READY;
                     ready_queue.push_back(find_process_by_id(p.id));
-                    p.logs.push_back(timestamp() + " Woke up from sleep");
+                    p.logs.push_back(timestamp() + " [FCFS MODE] Woke up immediately (sleep ignored)");
                 }
             }
         }
@@ -836,7 +849,7 @@ private:
         oss << "Process Counts -> Total: " << total
             << " | Running: " << running_cnt
 			<< " | Finished: " << finished_cnt << "\n";
-		oss << "======================================================================\n";
+		oss << "========================================================================\n";
 
         // List all processes with their status
         oss << std::left;
@@ -844,9 +857,9 @@ private:
             << " | " << std::setw(4) << "ID"
             << " | " << std::setw(10) << "State"
             << " | " << std::setw(12) << "Progress"
-            << " | " << std::setw(11) << "Memory"
+            << " | " << std::setw(14) << "Memory"
             << " | " << "TAT\n";
-		oss << "----------------------------------------------------------------------\n";
+		oss << "------------------------------------------------------------------------\n";
 
         for (const auto& p : processes) {
             std::string state_str;
@@ -860,17 +873,20 @@ private:
             if (p.finished && p.terminated_tick >= 0)
 				tat_str = std::to_string(p.terminated_tick - p.created_tick);
 
+            std::ostringstream mem_info;
+            mem_info << p.memory_bytes() << " (" << p.memory_table.size() << " vars)";
+
+
             oss << std::setw(8) << p.name 
                 << " | " << std::setw(4) << p.id 
                 << " | " << std::setw(10) << state_str 
                 << " | " << std::setw(12) << (std::to_string(p.executed) + "/" + std::to_string(p.total_instructions)) 
-                << " | " << std::setw(2) << p.memory_bytes() 
-                << " (" << p.memory_table.size() << " vars)" 
+                << " | " << std::setw(14) << mem_info.str()
                 << " | " << tat_str << "\n";
 
         }
 
-        oss << "======================================================================\n";
+        oss << "========================================================================\n";
 
         // Print to console
         std::cout << oss.str();
