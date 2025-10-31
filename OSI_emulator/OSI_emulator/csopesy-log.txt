@@ -649,3 +649,529 @@ Cores: 2
   p34 | ID: 34 | ready | Progress: 0/12
 ==================================
 
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 02:15:58PM)
+Total CPU ticks: 120
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 40 | Running: 2 | Finished: 0
+======================================================
+Process  | ID   | State      | Progress     | TAT
+------------------------------------------------------
+p1       | 1    | ready      | 7/16         | -
+p2       | 2    | ready      | 10/18        | -
+p3       | 3    | ready      | 7/10         | -
+p4       | 4    | ready      | 8/10         | -
+p5       | 5    | ready      | 6/20         | -
+p6       | 6    | ready      | 2/11         | -
+p7       | 7    | ready      | 2/20         | -
+p8       | 8    | ready      | 9/16         | -
+p9       | 9    | running    | 5/17         | -
+p10      | 10   | running    | 2/16         | -
+p11      | 11   | ready      | 0/11         | -
+p12      | 12   | ready      | 0/10         | -
+p13      | 13   | ready      | 0/14         | -
+p14      | 14   | ready      | 0/14         | -
+p15      | 15   | ready      | 0/18         | -
+p16      | 16   | ready      | 0/13         | -
+p17      | 17   | ready      | 0/14         | -
+p18      | 18   | ready      | 0/12         | -
+p19      | 19   | ready      | 0/15         | -
+p20      | 20   | ready      | 0/11         | -
+p21      | 21   | ready      | 0/18         | -
+p22      | 22   | ready      | 0/10         | -
+p23      | 23   | ready      | 0/17         | -
+p24      | 24   | ready      | 0/11         | -
+p25      | 25   | ready      | 0/12         | -
+p26      | 26   | ready      | 0/10         | -
+p27      | 27   | ready      | 0/15         | -
+p28      | 28   | ready      | 0/17         | -
+p29      | 29   | ready      | 0/15         | -
+p30      | 30   | ready      | 0/16         | -
+p31      | 31   | ready      | 0/12         | -
+p32      | 32   | ready      | 0/15         | -
+p33      | 33   | ready      | 0/13         | -
+p34      | 34   | ready      | 0/11         | -
+p35      | 35   | ready      | 0/17         | -
+p36      | 36   | ready      | 0/12         | -
+p37      | 37   | ready      | 0/17         | -
+p38      | 38   | ready      | 0/13         | -
+p39      | 39   | ready      | 0/11         | -
+p40      | 40   | ready      | 0/20         | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 02:16:13PM)
+Total CPU ticks: 150
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 50 | Running: 2 | Finished: 0
+======================================================
+Process  | ID   | State      | Progress     | TAT
+------------------------------------------------------
+p1       | 1    | ready      | 7/16         | -
+p2       | 2    | ready      | 10/18        | -
+p3       | 3    | ready      | 7/10         | -
+p4       | 4    | ready      | 8/10         | -
+p5       | 5    | ready      | 6/20         | -
+p6       | 6    | ready      | 2/11         | -
+p7       | 7    | ready      | 2/20         | -
+p8       | 8    | ready      | 9/16         | -
+p9       | 9    | running    | 8/17         | -
+p10      | 10   | ready      | 4/16         | -
+p11      | 11   | running    | 3/11         | -
+p12      | 12   | ready      | 0/10         | -
+p13      | 13   | ready      | 0/14         | -
+p14      | 14   | ready      | 0/14         | -
+p15      | 15   | ready      | 0/18         | -
+p16      | 16   | ready      | 0/13         | -
+p17      | 17   | ready      | 0/14         | -
+p18      | 18   | ready      | 0/12         | -
+p19      | 19   | ready      | 0/15         | -
+p20      | 20   | ready      | 0/11         | -
+p21      | 21   | ready      | 0/18         | -
+p22      | 22   | ready      | 0/10         | -
+p23      | 23   | ready      | 0/17         | -
+p24      | 24   | ready      | 0/11         | -
+p25      | 25   | ready      | 0/12         | -
+p26      | 26   | ready      | 0/10         | -
+p27      | 27   | ready      | 0/15         | -
+p28      | 28   | ready      | 0/17         | -
+p29      | 29   | ready      | 0/15         | -
+p30      | 30   | ready      | 0/16         | -
+p31      | 31   | ready      | 0/12         | -
+p32      | 32   | ready      | 0/15         | -
+p33      | 33   | ready      | 0/13         | -
+p34      | 34   | ready      | 0/11         | -
+p35      | 35   | ready      | 0/17         | -
+p36      | 36   | ready      | 0/12         | -
+p37      | 37   | ready      | 0/17         | -
+p38      | 38   | ready      | 0/13         | -
+p39      | 39   | ready      | 0/11         | -
+p40      | 40   | ready      | 0/20         | -
+p41      | 41   | ready      | 0/13         | -
+p42      | 42   | ready      | 0/20         | -
+p43      | 43   | ready      | 0/16         | -
+p44      | 44   | ready      | 0/20         | -
+p45      | 45   | ready      | 0/10         | -
+p46      | 46   | ready      | 0/11         | -
+p47      | 47   | ready      | 0/13         | -
+p48      | 48   | ready      | 0/13         | -
+p49      | 49   | ready      | 0/15         | -
+p50      | 50   | ready      | 0/16         | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 02:24:28PM)
+Total CPU ticks: 86
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.02 processes/tick
+Average TAT: 71.00 ticks
+Process Counts -> Total: 3 | Running: 1 | Finished: 2
+======================================================
+Process  | ID   | State      | Progress     | TAT
+------------------------------------------------------
+t1       | 1    | finished   | 15/15        | 61
+t2       | 2    | running    | 6/18         | -
+t3       | 3    | finished   | 12/12        | 81
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 02:24:57PM)
+Total CPU ticks: 129
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.02 processes/tick
+Average TAT: 71.00 ticks
+Process Counts -> Total: 7 | Running: 2 | Finished: 2
+======================================================
+Process  | ID   | State      | Progress     | TAT
+------------------------------------------------------
+t1       | 1    | finished   | 15/15        | 61
+t2       | 2    | running    | 12/18        | -
+t3       | 3    | finished   | 12/12        | 81
+1        | 4    | running    | 4/20         | -
+2        | 5    | ready      | 0/14         | -
+3        | 6    | ready      | 0/14         | -
+4        | 7    | ready      | 0/15         | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 02:25:19PM)
+Total CPU ticks: 172
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.02 processes/tick
+Average TAT: 98.33 ticks
+Process Counts -> Total: 7 | Running: 2 | Finished: 3
+======================================================
+Process  | ID   | State      | Progress     | TAT
+------------------------------------------------------
+t1       | 1    | finished   | 15/15        | 61
+t2       | 2    | finished   | 18/18        | 153
+t3       | 3    | finished   | 12/12        | 81
+1        | 4    | ready      | 6/20         | -
+2        | 5    | ready      | 4/14         | -
+3        | 6    | running    | 2/14         | -
+4        | 7    | running    | 3/15         | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 02:25:31PM)
+Total CPU ticks: 196
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.02 processes/tick
+Average TAT: 98.33 ticks
+Process Counts -> Total: 7 | Running: 2 | Finished: 3
+======================================================
+Process  | ID   | State      | Progress     | TAT
+------------------------------------------------------
+t1       | 1    | finished   | 15/15        | 61
+t2       | 2    | finished   | 18/18        | 153
+t3       | 3    | finished   | 12/12        | 81
+1        | 4    | running    | 8/20         | -
+2        | 5    | ready      | 5/14         | -
+3        | 6    | running    | 3/14         | -
+4        | 7    | ready      | 7/15         | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 02:25:49PM)
+Total CPU ticks: 223
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.01 processes/tick
+Average TAT: 98.33 ticks
+Process Counts -> Total: 9 | Running: 2 | Finished: 3
+======================================================
+Process  | ID   | State      | Progress     | TAT
+------------------------------------------------------
+t1       | 1    | finished   | 15/15        | 61
+t2       | 2    | finished   | 18/18        | 153
+t3       | 3    | finished   | 12/12        | 81
+1        | 4    | running    | 14/20        | -
+2        | 5    | ready      | 7/14         | -
+3        | 6    | sleeping   | 10/14        | -
+4        | 7    | ready      | 9/15         | -
+90       | 8    | running    | 3/16         | -
+5        | 9    | ready      | 0/17         | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:06:41PM)
+Total CPU ticks: 27
+Cores: 2 | Busy: 0 | Idle: 2
+CPU Utilization: 0.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 0 | Running: 0 | Finished: 0
+======================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+------------------------------------------------------
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:07:28PM)
+Total CPU ticks: 0
+Cores: 2 | Busy: 0 | Idle: 2
+CPU Utilization: 0.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 0 | Running: 0 | Finished: 0
+======================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+------------------------------------------------------
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:07:44PM)
+Total CPU ticks: 16
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 16 | Running: 2 | Finished: 0
+======================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+------------------------------------------------------
+p1       | 1    | ready      | 5/19         | 8          (4 vars) | -
+p2       | 2    | ready      | 3/10         | 2          (1 vars) | -
+p3       | 3    | ready      | 3/11         | 4          (2 vars) | -
+p4       | 4    | ready      | 4/20         | 4          (2 vars) | -
+p5       | 5    | ready      | 2/19         | 0          (0 vars) | -
+p6       | 6    | sleeping   | 4/10         | 6          (3 vars) | -
+p7       | 7    | running    | 6/15         | 12         (6 vars) | -
+p8       | 8    | running    | 1/11         | 0          (0 vars) | -
+p9       | 9    | ready      | 0/10         | 0          (0 vars) | -
+p10      | 10   | ready      | 0/13         | 0          (0 vars) | -
+p11      | 11   | ready      | 0/20         | 0          (0 vars) | -
+p12      | 12   | ready      | 0/10         | 0          (0 vars) | -
+p13      | 13   | ready      | 0/13         | 0          (0 vars) | -
+p14      | 14   | ready      | 0/20         | 0          (0 vars) | -
+p15      | 15   | ready      | 0/16         | 0          (0 vars) | -
+p16      | 16   | ready      | 0/14         | 0          (0 vars) | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:09:08PM)
+Total CPU ticks: 0
+Cores: 2 | Busy: 0 | Idle: 2
+CPU Utilization: 0.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 2 | Running: 0 | Finished: 0
+======================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+------------------------------------------------------
+p1       | 1    | ready      | 0/14         | 0          (0 vars) | -
+p2       | 2    | ready      | 0/10         | 0          (0 vars) | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:09:20PM)
+Total CPU ticks: 3
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 2 | Running: 2 | Finished: 0
+======================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+------------------------------------------------------
+p1       | 1    | running    | 3/14         | 4          (2 vars) | -
+p2       | 2    | running    | 1/10         | 2          (1 vars) | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:09:33PM)
+Total CPU ticks: 13
+Cores: 2 | Busy: 2 | Idle: 0
+CPU Utilization: 100.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 2 | Running: 2 | Finished: 0
+======================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+------------------------------------------------------
+p1       | 1    | running    | 3/14         | 8          (4 vars) | -
+p2       | 2    | running    | 1/10         | 8          (4 vars) | -
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:09:42PM)
+Total CPU ticks: 113
+Cores: 2 | Busy: 0 | Idle: 2
+CPU Utilization: 0.00%
+Throughput: 0.02 processes/tick
+Average TAT: 55.00 ticks
+Process Counts -> Total: 2 | Running: 0 | Finished: 2
+======================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+------------------------------------------------------
+p1       | 1    | finished   | 14/14        | 0          (0 vars) | 72
+p2       | 2    | finished   | 10/10        | 0          (0 vars) | 38
+======================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:45:48PM)
+Total CPU ticks: 5
+Cores: 2 | Busy: 0 | Idle: 2
+CPU Utilization: 0.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 0 | Running: 0 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:46:05PM)
+Total CPU ticks: 45
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+t1       | 1    | running    | 3/14         | 10         (5 vars) | -
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:48:37PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:48:55PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:49:24PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:50:32PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:50:48PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:51:30PM)
+Total CPU ticks: 110
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:51:37PM)
+Total CPU ticks: 210
+Cores: 2 | Busy: 0 | Idle: 2
+CPU Utilization: 0.00%
+Throughput: 0.00 processes/tick
+Average TAT: 129.00 ticks
+Process Counts -> Total: 1 | Running: 0 | Finished: 1
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:52:44PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+t1       | 1    | running    | 3/17         | 10         (5 vars) | -
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:54:23PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+t1       | 1    | running    | 1/14         | 2         (1 vars)   | -    
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:55:27PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:56:20PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 05:57:07PM)
+Total CPU ticks: 0
+Cores: 2 | Busy: 0 | Idle: 2
+CPU Utilization: 0.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 0 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+1        | 1    | ready      | 0/11         | 0    (0 vars)   | -    
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 06:00:35PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+1        | 1    | running    | 1/18         | 8          (4 vars) | -
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 06:02:29PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory     | TAT
+----------------------------------------------------------------------
+1        | 1    | running    | 4/13         | 14 (7 vars) | -
+======================================================================
+===== CPU UTILIZATION REPORT (with Runtime Stats) =====
+Timestamp: (10/31/2025 06:03:08PM)
+Total CPU ticks: 10
+Cores: 2 | Busy: 1 | Idle: 1
+CPU Utilization: 50.00%
+Throughput: 0.00 processes/tick
+Average TAT: 0.00 ticks
+Process Counts -> Total: 1 | Running: 1 | Finished: 0
+======================================================================
+Process  | ID   | State      | Progress     | Memory      | TAT
+----------------------------------------------------------------------
+0        | 1    | running    | 2/13         | 8  (4 vars) | -
+======================================================================

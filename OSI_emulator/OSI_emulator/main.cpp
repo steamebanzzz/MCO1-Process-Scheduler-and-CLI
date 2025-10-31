@@ -111,7 +111,7 @@ struct Process {
 	long long created_tick = 0;
 	long long terminated_tick = -1;
 
-    std::map<std::string, std::uint16_t> variables;
+    std::map<std::string, std::uint16_t> memory_table;
     int sleep_remaining = 0;
     int delay_remaining = 0;
 
@@ -136,14 +136,14 @@ struct Process {
     }
 
     std::uint16_t get_variable(const std::string& name) {
-        if (variables.find(name) == variables.end()) {
-            variables[name] = 0;
+        if (memory_table.find(name) == memory_table.end()) {
+            memory_table[name] = 0;
         }
-        return variables[name];
+        return memory_table[name];
     }
 
     void set_variable(const std::string& name, std::uint16_t value) {
-        variables[name] = value;
+        memory_table[name] = value;
     }
 
     std::uint16_t parse_operand(const std::string& operand) {
@@ -151,6 +151,10 @@ struct Process {
             return static_cast<std::uint16_t>(std::stoi(operand));
         }
         return get_variable(operand);
+    }
+
+    size_t memory_bytes() const {
+        return memory_table.size() * sizeof(std::uint16_t);
     }
 };
 
@@ -263,6 +267,12 @@ private:
 
         std::cout << "Initialized successfully from " << fname << "\n";
         std::cout << "num-cpu: " << cfg.num_cpu << " | scheduler: " << cfg.scheduler << "\n";
+    }
+
+    static std::uint16_t clamp_uint16(std::int64_t value) {
+        if (value < 0) value = 0;
+        else if (value > 65535) value = 65535;
+        return static_cast<std::uint16_t>(value);
     }
 
     // ===== SCREEN COMMANDS =====
@@ -591,16 +601,20 @@ private:
                 
             case InstructionType::ADD: {
                 std::uint16_t val2 = p.parse_operand(inst.var2);
-                std::uint16_t result = val2 + inst.value2;
-                p.set_variable(inst.var1, result);
+                std::int64_t result = static_cast<std::int64_t>(val2) + static_cast<std::int64_t>(inst.value2);
+                result = clamp_uint16(result);
+                p.set_variable(inst.var1, static_cast<std::uint16_t>(result));
                 p.logs.push_back(timestamp() + " ADD: " + inst.var1 + " = " + std::to_string(result));
                 break;
             }
             
             case InstructionType::SUBTRACT: {
                 std::uint16_t val2 = p.parse_operand(inst.var2);
-                std::uint16_t result = (val2 >= inst.value2) ? val2 - inst.value2 : 0;
-                p.set_variable(inst.var1, result);
+                std::int64_t left = static_cast<std::int64_t>(val2);
+                std::int64_t right = static_cast<std::int64_t>(inst.value2);
+                std::int64_t result = left - right;
+                result = clamp_uint16(result);
+                p.set_variable(inst.var1, static_cast<std::uint16_t>(result));
                 p.logs.push_back(timestamp() + " SUBTRACT: " + inst.var1 + " = " + std::to_string(result));
                 break;
             }
@@ -651,16 +665,20 @@ private:
                 
             case InstructionType::ADD: {
                 std::uint16_t val2 = p.parse_operand(inst.var2);
-                std::uint16_t result = val2 + inst.value2;
-                p.set_variable(inst.var1, result);
+                std::int64_t result = static_cast<std::int64_t>(val2) + static_cast<std::int64_t>(inst.value2);
+                result = clamp_uint16(result);
+                p.set_variable(inst.var1, static_cast<std::uint16_t>(result));
                 p.logs.push_back(timestamp() + " ADD (in loop): " + inst.var1 + " = " + std::to_string(result));
                 break;
             }
             
             case InstructionType::SUBTRACT: {
                 std::uint16_t val2 = p.parse_operand(inst.var2);
-                std::uint16_t result = (val2 >= inst.value2) ? val2 - inst.value2 : 0;
-                p.set_variable(inst.var1, result);
+                std::int64_t left = static_cast<std::int64_t>(val2);
+                std::int64_t right = static_cast<std::int64_t>(inst.value2);
+                std::int64_t result = left - right;
+                result = clamp_uint16(result);
+                p.set_variable(inst.var1, static_cast<std::uint16_t>(result));
                 p.logs.push_back(timestamp() + " SUBTRACT (in loop): " + inst.var1 + " = " + std::to_string(result));
                 break;
             }
@@ -727,6 +745,10 @@ private:
 					p.terminated_tick = tick_count; // P9: stamp termination tick
                     running[i] = processes.end();
                     p.logs.push_back(timestamp() + " Process finished on core " + std::to_string(i));
+
+                    size_t released_bytes = p.memory_table.size() * sizeof(std::uint16_t);
+                    p.memory_table.clear();
+                    p.logs.push_back(timestamp() + "Released memory (" + std::to_string(released_bytes) + " bytes)");  
                 }
                 // Round Robin: quantum expired and not sleeping
                 else if (cfg.scheduler == "rr" && quantum_left[i] <= 0 && p.state != Process::SLEEPING) {
@@ -814,7 +836,7 @@ private:
         oss << "Process Counts -> Total: " << total
             << " | Running: " << running_cnt
 			<< " | Finished: " << finished_cnt << "\n";
-		oss << "======================================================\n";
+		oss << "======================================================================\n";
 
         // List all processes with their status
         oss << std::left;
@@ -822,8 +844,9 @@ private:
             << " | " << std::setw(4) << "ID"
             << " | " << std::setw(10) << "State"
             << " | " << std::setw(12) << "Progress"
+            << " | " << std::setw(11) << "Memory"
             << " | " << "TAT\n";
-		oss << "------------------------------------------------------\n";
+		oss << "----------------------------------------------------------------------\n";
 
         for (const auto& p : processes) {
             std::string state_str;
@@ -837,14 +860,17 @@ private:
             if (p.finished && p.terminated_tick >= 0)
 				tat_str = std::to_string(p.terminated_tick - p.created_tick);
 
-            oss << std::setw(8) << p.name
-                << " | " << std::setw(4) << p.id
-                << " | " << std::setw(10) << state_str
-                << " | " << std::setw(12) << (std::to_string(p.executed) + "/" + std::to_string(p.total_instructions))
-				<< " | " << tat_str << "\n";
+            oss << std::setw(8) << p.name 
+                << " | " << std::setw(4) << p.id 
+                << " | " << std::setw(10) << state_str 
+                << " | " << std::setw(12) << (std::to_string(p.executed) + "/" + std::to_string(p.total_instructions)) 
+                << " | " << std::setw(2) << p.memory_bytes() 
+                << " (" << p.memory_table.size() << " vars)" 
+                << " | " << tat_str << "\n";
+
         }
 
-        oss << "======================================================\n";
+        oss << "======================================================================\n";
 
         // Print to console
         std::cout << oss.str();
