@@ -35,9 +35,6 @@ void ConsoleManager::initialize() {
     startScheduler();
 }
 
-/*
-* This function reads the config.txt file and initializes parameters
-*/
 void ConsoleManager::readConfig(const string& filename) {
     ifstream configFile(filename);
     if (!configFile.is_open()) {
@@ -60,8 +57,8 @@ void ConsoleManager::readConfig(const string& filename) {
         }
         else if (key == "scheduler") {
             string value;
-            iss >> quoted(value);  // Use std::quoted to handle quotes
-            scheduler = value;  // Assign the stripped value
+            iss >> quoted(value); 
+            scheduler = value;  
             if (scheduler != "fcfs" && scheduler != "rr") {
                 cerr << "Error: Invalid scheduler value: '" << scheduler << "'. Must be 'fcfs' or 'rr'.\n";
                 return;
@@ -107,13 +104,12 @@ void ConsoleManager::readConfig(const string& filename) {
             return;
         }
     }
-    //cout << "Configuration successfully loaded.\n";
     configFile.close();
     return;
 }
 
+// DEBUGGING PURPOSE
 void ConsoleManager::testConfig() {
-    // test if the config file was read successfully, print all values
     cout << "num-cpu: " << num_cpu << endl;
     cout << "scheduler: " << scheduler << endl;
     cout << "quantum-cycles: " << quantum_cycles << endl;
@@ -123,36 +119,26 @@ void ConsoleManager::testConfig() {
     cout << "delay-per-exec: " << delay_per_exec << endl;
 }
 
-/*
-* This function adds a new console to the list of consoles
-*
-* @param name - the name of the console
-*/
 void ConsoleManager::addConsole(const string& name, bool fromScreenCommand = false) {
     lock_guard<mutex> lock(processMutex);
 
-    // Check if the console name already exists
     if (consoles.find(name) != consoles.end()) {
         cout << "Console \"" << name << "\" already exists." << endl;
         return;
     }
 
-    // Generate unique process ID
     static int nextId = 1;
     int processId = nextId++;
 
-    // Random number of instructions between min_ins and max_ins
     random_device rd;
     knuth_b knuth_gen(rd());
     uniform_int_distribution<> dist(min_ins, max_ins);
     int maxInstructions = dist(knuth_gen);
 
-    // Create console
     process_console* newConsole = new process_console(name, maxInstructions);
     newConsole->setProcessID(processId);
     newConsole->setInstructionLine(0);
 
-    // Add to waiting queue and map
     waitingQueue.push(newConsole);
     consoles[name] = newConsole;
 
@@ -162,34 +148,22 @@ void ConsoleManager::addConsole(const string& name, bool fromScreenCommand = fal
 }
 
 
-/*
-* This function displays the information of the specified console
-*
-* @param name - the name of the console
-*/
 void ConsoleManager::displayConsole(const string& name) const {
-    // Check if the console name exists in the map
     auto it = consoles.find(name);
     if (it != consoles.end()) {
         process_console* console = it->second;  
         system("cls");
 
-        // Display console information
         cout << "Process: \"" << console->getName() << "\"" << endl;
         cout << "ID: " << console->getProcessID() << endl;  
-        // cout << "Created At: " << console->getTimestamp() << endl;
         cout << "Current Line of Instruction: " << console->getInstructionLine() << endl;
         cout << "Lines of Code: " << console->getInstructionTotal() << endl;
     }
     else {
-        // If console does not exist, display a message
         cout << "Console \"" << name << "\" does not exist." << endl;
     }
 }
 
-/*
-* This function displays the current general CPU info
-*/
 void ConsoleManager::displayCPUInfo() {
     int usedCores = coreCount - availableCores;
 
@@ -204,9 +178,6 @@ void ConsoleManager::displayCPUInfo() {
     cout << "Cores available: " << availableCores << endl;
 }
 
-/*
-* This function lists the status of all the consoles in the console screen
-*/
 void ConsoleManager::listConsoles() {
     lock_guard<mutex> lock(processMutex);
 
@@ -227,7 +198,6 @@ void ConsoleManager::listConsoles() {
     cout << "Running Processes:\n";
     for (const auto& consolePair : consoles) {
         process_console* console = consolePair.second;
-        // get all running consoles
         if (console->getStatus() == process_console::RUNNING) {
             hasRunning = true;
             cout << console->getName() + "\t" + console->getTimestamp() + "\tCore: " + to_string(console->getCoreID()) + "\t" + to_string(console->getInstructionLine()) + "/" + to_string(console->getInstructionTotal()) + "\n";
@@ -239,7 +209,6 @@ void ConsoleManager::listConsoles() {
     cout << "Finished Processes:\n";
     for (const auto& consolePair : consoles) {
         process_console* console = consolePair.second;
-        // get all finished consoles
         if (console->getStatus() == process_console::TERMINATED) {
             hasFinished = true;
             cout << console->getName() + "\t" + console->getTimestamp() + "\tFinished\t" + to_string(console->getInstructionLine()) + "/" + to_string(console->getInstructionTotal()) + "\n";
@@ -249,9 +218,6 @@ void ConsoleManager::listConsoles() {
     if (!hasFinished) cout << "No terminated consoles.\n";
 }
 
-/*
-* This function prints the status of all the consoles as a .txt file
-*/
 void ConsoleManager::reportUtil() {
     lock_guard<mutex> lock(processMutex);
 
@@ -263,11 +229,9 @@ void ConsoleManager::reportUtil() {
         return;
     }
 
-    // Start writing to the file
     outFile << "Console Report\n";
     outFile << "-----------------------------------------\n";
 
-    // Display CPU Info
     int usedCores = coreCount - availableCores;
 
     float cpuUsage = 0.0;
@@ -366,53 +330,30 @@ void ConsoleManager::startScheduler() {
     }
 }
 
-/*
-* This function checks if the specified console exists
-*
-* @param name - the name of the console
-* @return true if the console exists, false otherwise
-*/
 bool ConsoleManager::consoleExists(const string& name) const {
-    // Check if the console name exists in the list of consoles
     for (const auto& console : consoles) {
-        // If console exists
         if (console.second->getName() == name) {
             return true;
         }
     }
-    // If console does not exist
     return false;
 }
 
-/*
-* This function checks if the list of consoles is empty or not
-*
-* @return true if the list of consoles is not empty, false otherwise
-*/
 bool ConsoleManager::hasConsoles() const {
     return !consoles.empty();
 }
 
-/*
-* This function initializes and runs the console program inside the specified console
-*
-* @param name - the name of the console
-*/
 void ConsoleManager::loopConsole(const string& name) {
-    // Find specified console in the list of consoles
     for (auto& console : consoles) {
-        // If console exists
         if (console.second->getName() == name) {
             vector<string> buffer;
             string input;
             currentConsole = true;
 
-            // Start console program
             do {
                 buffer.clear();
                 cout << "Console [" << console.second->getName() << "] Enter a command: ";
 
-                // Read user input
                 while (cin >> input) {
                     buffer.push_back(input);
                     if (cin.peek() == '\n') break;
@@ -423,12 +364,12 @@ void ConsoleManager::loopConsole(const string& name) {
                 const string& command = buffer[0];
 
                 if (command == "exit") {
-                    return;  // Exit command
+                    return;  
                 }
                 else if (command == "process-smi") {
                     process_console* proc = console.second;
 
-                    // Generate instructions if none exist
+ 
                     if (proc->instructions.empty()) {
                         generateRandomInstructions(proc, proc->getInstructionTotal());
                     }
@@ -475,7 +416,6 @@ void ConsoleManager::loopConsole(const string& name) {
                         cout << "\nFinished!" << endl;
                 }
                 else if (command == "finished") {
-                    // Display finished processes
                     cout << "Finished Processes:\n";
                     bool hasFinished = false;
                     for (const auto& consolePair : consoles) {
@@ -496,19 +436,17 @@ void ConsoleManager::loopConsole(const string& name) {
                 }
 
             } while (currentConsole);
-            return; // Exit console if not found
+            return; 
         }
     }
 }
 
 process_console::Status ConsoleManager::getConsoleStatus(const string& name) const {
-    // Check if the console name exists in the map
     auto it = consoles.find(name);
     if (it != consoles.end()) {
-        return it->second->getStatus(); // Return the status of the console
+        return it->second->getStatus(); 
     }
-    // If console does not exist, return a default status (or handle it as you prefer)
-    return process_console::TERMINATED; // Assuming terminated is a safe fallback; you can change this
+    return process_console::TERMINATED; 
 }
 
 void ConsoleManager::schedulerTest(bool set_scheduler) {
@@ -582,7 +520,6 @@ void ConsoleManager::schedulerRR() {
                     nextProcess->runProcess(i, quantum_cycles, delay_per_exec);
                     lock_guard<mutex> lock(processMutex);
 
-                    // If the process has not completed, requeue it
                     if (nextProcess->getIsActive() && nextProcess->getInstructionLine() < nextProcess->getInstructionTotal()) {
                         waitingQueue.push(nextProcess);
                     }
