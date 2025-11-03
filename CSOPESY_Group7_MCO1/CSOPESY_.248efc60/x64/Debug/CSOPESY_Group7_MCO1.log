@@ -1,7 +1,0 @@
-﻿  main.cpp
-  os_core.cpp
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\format(42): warning STL4038: The contents of <format> are available only with C++20 or later.
-C:\Users\evanp\OneDrive\Desktop\3rd Year - 1st Term\CSOPESY\MCO1\CSOPESY_Group7_MCO1\os_core.cpp(636,33): warning C4244: '=': conversion from 'const uint16_t' to 'uint8_t', possible loss of data
-  process_console.cpp
-  Generating Code...
-  CSOPESY_Group7_MCO1.vcxproj -> C:\Users\evanp\OneDrive\Desktop\3rd Year - 1st Term\CSOPESY\MCO1\CSOPESY_Group7_MCO1\x64\Debug\CSOPESY_Group7_MCO1.exe
