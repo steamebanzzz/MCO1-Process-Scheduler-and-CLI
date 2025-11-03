@@ -27,7 +27,7 @@ void process_console::runProcess(int coreID, int quantum_cycles, int delaysPerEx
     while (isActive && instructionLine < instructionTotal) {
         if (delaysPerExec > 0) {
             for (int delay = 0; delay < delaysPerExec; ++delay) {
-                // Simulate busy-waiting delay
+ 
             }
         }
 
@@ -47,7 +47,6 @@ void process_console::runProcess(int coreID, int quantum_cycles, int delaysPerEx
                 this->finished = true;
         }
 
-        // Introduce a random delay for realism
         std::this_thread::sleep_for(std::chrono::milliseconds(dist(knuth_gen)));
 
         instructionLine++;
@@ -123,7 +122,7 @@ std::string process_console::getCurrentTime() {
 void process_console::executeInstruction(process_console* proc, const Instruction& instr) {
     switch (instr.type) {
     case PRINT: {
-        // Default message if none is provided
+        // DEFAULT MESSAGE
         std::string msg = instr.message.empty()
             ? "Hello world from " + proc->getName() + "!"
             : instr.message;
