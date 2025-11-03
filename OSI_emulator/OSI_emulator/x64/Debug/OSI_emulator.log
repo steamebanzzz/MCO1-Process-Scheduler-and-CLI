@@ -1,4 +1,0 @@
-﻿  main.cpp
-C:\Users\ashle\source\repos\Upd-MCO1-CSOPESY\OSI_emulator\OSI_emulator\main.cpp(454,51): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\ashle\source\repos\Upd-MCO1-CSOPESY\OSI_emulator\OSI_emulator\main.cpp(747,40): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-  OSI_emulator.vcxproj -> C:\Users\ashle\Source\Repos\Upd-MCO1-CSOPESY\OSI_emulator\x64\Debug\OSI_emulator.exe
