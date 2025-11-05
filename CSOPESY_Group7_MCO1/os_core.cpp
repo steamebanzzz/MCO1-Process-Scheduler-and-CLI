@@ -57,8 +57,8 @@ void ConsoleManager::readConfig(const string& filename) {
         }
         else if (key == "scheduler") {
             string value;
-            iss >> quoted(value); 
-            scheduler = value;  
+            iss >> quoted(value);
+            scheduler = value;
             if (scheduler != "fcfs" && scheduler != "rr") {
                 cerr << "Error: Invalid scheduler value: '" << scheduler << "'. Must be 'fcfs' or 'rr'.\n";
                 return;
@@ -151,11 +151,11 @@ void ConsoleManager::addConsole(const string& name, bool fromScreenCommand = fal
 void ConsoleManager::displayConsole(const string& name) const {
     auto it = consoles.find(name);
     if (it != consoles.end()) {
-        process_console* console = it->second;  
+        process_console* console = it->second;
         system("cls");
 
         cout << "Process: \"" << console->getName() << "\"" << endl;
-        cout << "ID: " << console->getProcessID() << endl;  
+        cout << "ID: " << console->getProcessID() << endl;
         cout << "Current Line of Instruction: " << console->getInstructionLine() << endl;
         cout << "Lines of Code: " << console->getInstructionTotal() << endl;
     }
@@ -364,12 +364,13 @@ void ConsoleManager::loopConsole(const string& name) {
                 const string& command = buffer[0];
 
                 if (command == "exit") {
-                    return;  
+                    return;
                 }
                 else if (command == "process-smi") {
                     process_console* proc = console.second;
 
- 
+                    schedulerPaused = true;
+
                     if (proc->instructions.empty()) {
                         generateRandomInstructions(proc, proc->getInstructionTotal());
                     }
@@ -414,6 +415,8 @@ void ConsoleManager::loopConsole(const string& name) {
 
                     if (proc->getStatus() == process_console::TERMINATED)
                         cout << "\nFinished!" << endl;
+
+                    schedulerPaused = false;
                 }
                 else if (command == "finished") {
                     cout << "Finished Processes:\n";
@@ -436,7 +439,7 @@ void ConsoleManager::loopConsole(const string& name) {
                 }
 
             } while (currentConsole);
-            return; 
+            return;
         }
     }
 }
@@ -444,9 +447,9 @@ void ConsoleManager::loopConsole(const string& name) {
 process_console::Status ConsoleManager::getConsoleStatus(const string& name) const {
     auto it = consoles.find(name);
     if (it != consoles.end()) {
-        return it->second->getStatus(); 
+        return it->second->getStatus();
     }
-    return process_console::TERMINATED; 
+    return process_console::TERMINATED;
 }
 
 void ConsoleManager::schedulerTest(bool set_scheduler) {
@@ -475,56 +478,75 @@ void ConsoleManager::schedulerTest(bool set_scheduler) {
 
 void ConsoleManager::schedulerFCFS() {
     while (true) {
-        this_thread::sleep_for(chrono::milliseconds(10));
+        std::unique_lock<std::mutex> lock(processMutex);
 
-        lock_guard<mutex> lock(processMutex);
+        schedulerCV.wait_for(lock, std::chrono::milliseconds(2));
+
+        if (schedulerPaused)
+            continue;
 
         for (int i = 0; i < cpuCores.size(); ++i) {
             if (!cpuCores[i] && !waitingQueue.empty()) {
                 process_console* nextProcess = waitingQueue.front();
                 waitingQueue.pop();
+                if (nextProcess->getStatus() == process_console::TERMINATED ||
+                    nextProcess->getInstructionLine() >= nextProcess->getInstructionTotal()) {
+                    continue; 
+                }
 
                 cpuCores[i] = true;
                 availableCores--;
 
-                runningProcesses[nextProcess->getName()] = thread([this, nextProcess, i]() {
+                runningProcesses[nextProcess->getName()] = std::thread([this, nextProcess, i]() {
                     nextProcess->runProcess(i, 0, delay_per_exec);
-                    lock_guard<mutex> lock(processMutex);
+
+                    std::lock_guard<std::mutex> lock(processMutex);
                     cpuCores[i] = false;
                     availableCores++;
+
+                    schedulerCV.notify_one();  
                     });
 
                 runningProcesses[nextProcess->getName()].detach();
             }
         }
-
-
     }
 }
 
 void ConsoleManager::schedulerRR() {
     while (true) {
-        this_thread::sleep_for(chrono::milliseconds(10));
+        std::unique_lock<std::mutex> lock(processMutex);
 
-        lock_guard<mutex> lock(processMutex);
+        schedulerCV.wait_for(lock, std::chrono::milliseconds(2));
+
+        if (schedulerPaused)
+            continue;
 
         for (int i = 0; i < cpuCores.size(); ++i) {
             if (!cpuCores[i] && !waitingQueue.empty()) {
                 process_console* nextProcess = waitingQueue.front();
                 waitingQueue.pop();
+                if (nextProcess->getStatus() == process_console::TERMINATED ||
+                    nextProcess->getInstructionLine() >= nextProcess->getInstructionTotal()) {
+                    continue;
+                }
 
                 cpuCores[i] = true;
                 availableCores--;
 
-                runningProcesses[nextProcess->getName()] = thread([this, nextProcess, i]() {
+                runningProcesses[nextProcess->getName()] = std::thread([this, nextProcess, i]() {
                     nextProcess->runProcess(i, quantum_cycles, delay_per_exec);
-                    lock_guard<mutex> lock(processMutex);
+
+                    std::lock_guard<std::mutex> lock(processMutex);
 
                     if (nextProcess->getIsActive() && nextProcess->getInstructionLine() < nextProcess->getInstructionTotal()) {
                         waitingQueue.push(nextProcess);
                     }
+
                     cpuCores[i] = false;
                     availableCores++;
+
+                    schedulerCV.notify_one();  
                     });
 
                 runningProcesses[nextProcess->getName()].detach();
