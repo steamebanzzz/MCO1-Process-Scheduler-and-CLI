@@ -491,7 +491,7 @@ void ConsoleManager::schedulerFCFS() {
                 waitingQueue.pop();
                 if (nextProcess->getStatus() == process_console::TERMINATED ||
                     nextProcess->getInstructionLine() >= nextProcess->getInstructionTotal()) {
-                    continue; 
+                    continue;
                 }
 
                 cpuCores[i] = true;
@@ -504,7 +504,7 @@ void ConsoleManager::schedulerFCFS() {
                     cpuCores[i] = false;
                     availableCores++;
 
-                    schedulerCV.notify_one();  
+                    schedulerCV.notify_one();
                     });
 
                 runningProcesses[nextProcess->getName()].detach();
@@ -546,7 +546,7 @@ void ConsoleManager::schedulerRR() {
                     cpuCores[i] = false;
                     availableCores++;
 
-                    schedulerCV.notify_one();  
+                    schedulerCV.notify_one();
                     });
 
                 runningProcesses[nextProcess->getName()].detach();
