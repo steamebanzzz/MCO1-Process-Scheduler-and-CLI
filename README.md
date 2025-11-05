@@ -22,5 +22,23 @@ A command-line OS emulator that simulates a CPU process scheduler. The emulator 
     - `screen -ls` - List running/ready/sleeping/finished processes + CPU summary
     - `process-smi` - status/logs, `exit` - back to main menu
 - Process instruction support:
-    - 
+    - `PRINT(msg)` — prints text to the process (defaults to "Hello world from <process_name>!")
+    - `DECLARE(var, value)` — declares a uint16 variable.
+    - `ADD(var1, var2/value, var3/value)` — var1 = var2 + var3
+    - `SUBTRACT(var1, var2/value, var3/value)` — var1 = var2 - var3
+    - `SLEEP(X)` — sleep for X CPU ticks
+    - `FOR([instructions], repeats)` — repeat a block of instructions; nesting supported up to 3
 
+## Configuration (`config.txt`)
+
+```
+- num-cpu 16 [integer]
+- scheduler "rr" [rr or fcfs]
+- quantum-cycles 5 [positive integer]
+- batch-process-freq 1 [>=1]
+- min-ins 5000
+- max-ins 5000
+- delay-per-exec 1
+```
+
+## Build & Run 
