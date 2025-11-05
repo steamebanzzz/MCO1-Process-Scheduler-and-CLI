@@ -21,13 +21,13 @@ void process_console::runProcess(int coreID, int quantum_cycles, int delaysPerEx
     std::random_device rd;
     std::knuth_b knuth_gen(rd());
     std::uniform_int_distribution<> dist(10, 20);
-
+    
     int executedInstructions = 0;
 
     while (isActive && instructionLine < instructionTotal) {
         if (delaysPerExec > 0) {
             for (int delay = 0; delay < delaysPerExec; ++delay) {
- 
+
             }
         }
 
@@ -127,7 +127,6 @@ void process_console::executeInstruction(process_console* proc, const Instructio
             ? "Hello world from " + proc->getName() + "!"
             : instr.message;
         proc->logs.push_back(msg);
-        std::cout << msg << std::endl;
         break;
     }
 
