@@ -5,10 +5,10 @@ Major Output 1
 Prepared by: Gregory Cu  
 
 Developers: 
-[1] Aguete, Sofia Ashley M.
-[2] Gaspar, Chrisane Ianna B.
-[3] Pinca, Evan Andrew J.
-[4] Strebel, Adler Clarence E. 
+- Sofia Ashley M. Aguete  
+- Chrisane Ianna B. Gaspar  
+- Evan Andrew J. Pinca  
+- Adler Clarence E. Strebel  
 
 ## Project Overview
 A command-line OS emulator that simulates a CPU process scheduler. The emulator supports FCFS and Round-Robin scheduling, pre-generated process instructions (PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR), and CPU utilization reporting.
@@ -42,3 +42,8 @@ A command-line OS emulator that simulates a CPU process scheduler. The emulator 
 ```
 
 ## Build & Run 
+1. Open the project in Visual Studio Community
+2. Check your C++ environment
+3. Go to the top menu → Build → Build Solution.
+4. Run the emulator: Click the green "Start" button.
+5. The command-line emulator will open in a terminal window.
