@@ -1,6 +1,6 @@
 # MO1 - OS Emulator: Process Scheduler and CLI
 
-Course: CSOPESY
+Course: CSOPESY  
 MP Specs are prepared by: Mr. Gregory Cu  
 
 Developers: 
