@@ -28,6 +28,32 @@ const uint64_t MAX_VALUE = 4294967296;
 
 bool scheduler_test_run = false;
 
+vector<string> tokenize(const string& input) {
+    vector<string> tokens;
+    string token;
+    bool inQuotes = false;
+
+    for (char c : input) {
+        if (c == '"') {
+            inQuotes = !inQuotes;
+            continue;
+        }
+        if (c == ' ' && !inQuotes) {
+            if (!token.empty()) {
+                tokens.push_back(token);
+                token.clear();
+            }
+        }
+        else {
+            token.push_back(c);
+        }
+    }
+
+    if (!token.empty()) tokens.push_back(token);
+
+    return tokens;
+}
+
 void ConsoleManager::initialize() {
     readConfig("config.txt");
 
@@ -371,6 +397,116 @@ void generateRandomInstructions(process_console* proc, int instructionCount) {
 
         proc->instructions.push_back(instr);
     }
+}
+
+void ConsoleManager::parseCommand(const std::string& input) {
+    vector<string> tokens = tokenize(input);
+    if (tokens.empty()) return;
+
+    const string& cmd = tokens[0];
+
+    if (cmd == "screen") {
+        if (tokens.size() < 2) {
+            cout << "Error: Missing mode (-s, -c, -r).\n";
+            return;
+        }
+
+        string mode = tokens[1];
+
+        if (mode == "-s") {
+            handleScreenS(tokens);
+        }
+        else if (mode == "-c") {
+            handleScreenC(tokens, input);
+        }
+        else if (mode == "-r") {
+            handleScreenR(tokens);
+        }
+        else {
+            cout << "Error: Unknown screen option.\n";
+        }
+    }
+    else if (cmd == "process-smi") {
+        handleProcessSMI();
+    }
+    else if (cmd == "vmstat") {
+        handleVMStat();
+    }
+    else if (cmd == "scheduler-start") {
+        handleSchedulerStart();
+    }
+    else {
+        cout << "Error: Unknown command.\n";
+    }
+}
+
+void ConsoleManager::handleScreenS(const vector<string>& tokens) {
+    if (tokens.size() < 4) {
+        cout << "Usage: screen -s <process_name> <memory_size>\n";
+        return;
+    }
+
+    string name = tokens[2];
+    int memsize = stoi(tokens[3]);
+
+    cout << "[Parsed] screen -s\n";
+    cout << "  Name: " << name << "\n";
+    cout << "  Memory: " << memsize << "\n";
+
+    // TODO: call to process creation
+}
+
+void ConsoleManager::handleScreenC(const vector<string>& tokens, const std::string& rawInput) {
+    if (tokens.size() < 4) {
+        cout << "Usage: screen -c <name> <memory> \"<instructions>\"\n";
+        return;
+    }
+
+    string name = tokens[2];
+    int memsize = stoi(tokens[3]);
+
+    // Extract the raw instruction string between quotes
+    size_t firstQuote = rawInput.find('"');
+    size_t lastQuote = rawInput.rfind('"');
+
+    string instructions = "";
+    if (firstQuote != string::npos && lastQuote != string::npos && lastQuote > firstQuote) {
+        instructions = rawInput.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+    }
+
+    cout << "[Parsed] screen -c\n";
+    cout << "  Name: " << name << "\n";
+    cout << "  Memory: " << memsize << "\n";
+    cout << "  Instructions: " << instructions << "\n";
+
+    // TODO: call to create process + parse instructions
+}
+
+void ConsoleManager::handleScreenR(const vector<string>& tokens) {
+    if (tokens.size() < 3) {
+        cout << "Usage: screen -r <process_name>\n";
+        return;
+    }
+
+    string name = tokens[2];
+
+    cout << "[Parsed] screen -r\n";
+    cout << "  Requesting status of: " << name << "\n";
+
+    // TODO: implement recovery logic
+}
+
+void ConsoleManager::handleProcessSMI() {
+    cout << "[Parsed] process-smi\n";
+}
+
+void ConsoleManager::handleVMStat() {
+    cout << "[Parsed] vmstat\n";
+}
+
+void ConsoleManager::handleSchedulerStart() {
+    cout << "[Parsed] scheduler-start\n";
+    // TODO: start actual scheduler thread
 }
 
 void ConsoleManager::startScheduler() {
