@@ -38,58 +38,93 @@ void displayHelp() {
     cout << "  exit                 - Exit the program\n\n";
 }
 
-void screenCommand(const vector<string>& commandBuffer) {
+void screenCommand(const vector<string>& cmd) {
     if (!isInitialized) {
         cout << "Please run the \"initialize\" command first\n";
         return;
     }
 
-    if (commandBuffer.size() == 2) {
-        if (commandBuffer[1] == "-s" || commandBuffer[1] == "-r")
-            cout << "Usage: screen [-r | -s] [name]\n";
-        else if (commandBuffer[1] == "-ls") {
-            cout << "Listing all running consoles\n";
-            consoles.listConsoles();
-        }
-        else {
-            cout << "Screen command \"" << commandBuffer[1] << "\" not recognized. Try again.\n";
-        }
+    if (cmd.size() < 2) {
+        cout << "Usage:\n"
+            << "  screen -s <name> <memory>\n"
+            << "  screen -c <name> <memory> \"<instructions>\"\n"
+            << "  screen -r <name>\n"
+            << "  screen -ls\n";
+        return;
     }
-    else if (commandBuffer.size() == 3) {
-        if (commandBuffer[1] == "-s") {
-            if (consoles.consoleExists(commandBuffer[2])) {
-                cout << "Console \"" << commandBuffer[2] << "\" already exists.\n";
-            }
-            else {
-                clearCommand();
-                consoles.addConsole(commandBuffer[2], true);
-                consoles.loopConsole(commandBuffer[2]);
-                clearCommand();
-                displayHeader();
-            }
-        }
-        else if (commandBuffer[1] == "-r") {
-            if (!consoles.consoleExists(commandBuffer[2])) {
-                cout << "Process \"" << commandBuffer[2] << "\" not found." << endl;
-            }
-            else if (consoles.getConsoleStatus(commandBuffer[2]) == process_console::TERMINATED) {
-                cout << "Process \"" << commandBuffer[2] << "\" not found." << endl;
-            }
-            else {
-                cout << "Reopening console \"" << commandBuffer[2] << "\"\n";
-                consoles.displayConsole(commandBuffer[2]);
-                consoles.loopConsole(commandBuffer[2]);
-                clearCommand();
-                displayHeader();
-            }
-        }
-        else {
-            cout << "Screen command \"" << commandBuffer[1] << "\" not recognized. Try again.\n";
-        }
+
+    string opt = cmd[1];
+
+    // -----------------------
+    // LIST CONSOLES
+    // -----------------------
+    if (opt == "-ls") {
+        consoles.listConsoles();
+        return;
     }
-    else {
-        cout << "Usage: screen [-r | -s] [name]\n";
+
+    // -----------------------
+    // SCREEN -S  (Create process without instructions)
+    // -----------------------
+    if (opt == "-s") {
+        if (cmd.size() < 4) {
+            cout << "Usage: screen -s <name> <memory>\n";
+            return;
+        }
+
+        string name = cmd[2];
+        int mem = stoi(cmd[3]);
+
+        cout << "[Parsed] screen -s\n";
+        cout << "  Name: " << name << "\n";
+        cout << "  Memory: " << mem << "\n";
+
+        return;
     }
+
+    // -----------------------
+    // SCREEN -C  (Create process with instructions)
+    // -----------------------
+    if (opt == "-c") {
+        if (cmd.size() < 5) {
+            cout << "Usage: screen -c <name> <memory> \"<instructions>\"\n";
+            return;
+        }
+
+        string name = cmd[2];
+        int mem = stoi(cmd[3]);
+
+        // Reconstruct the instruction string (because it may contain spaces)
+        string instructions;
+        for (int i = 4; i < cmd.size(); i++) {
+            instructions += cmd[i] + " ";
+        }
+        if (instructions.front() == '"') instructions.erase(0, 1);
+        if (instructions.back() == '"') instructions.pop_back();
+
+        cout << "[Parsed] screen -c\n";
+        cout << "  Name: " << name << "\n";
+        cout << "  Memory: " << mem << "\n";
+        cout << "  Instructions: " << instructions << "\n";
+
+        return;
+    }
+
+    // -----------------------
+    // SCREEN -R
+    // -----------------------
+    if (opt == "-r") {
+        if (cmd.size() < 3) {
+            cout << "Usage: screen -r <name>\n";
+            return;
+        }
+
+        cout << "[Parsed] screen -r\n";
+        cout << "  Requesting: " << cmd[2] << "\n";
+        return;
+    }
+
+    cout << "Screen command \"" << opt << "\" not recognized.\n";
 }
 
 
@@ -149,6 +184,12 @@ void checkCommand(const vector<string>& commandBuffer) {
         else if (command == "report-util") {
             cout << "Generating report...\n";
             consoles.reportUtil();
+        }
+        else if (command == "process-smi") {
+            cout << "[Parsed] process-smi\n";
+        }
+        else if (command == "vmstat") {
+            cout << "[Parsed] vmstat\n";
         }
         else {
             cout << "Command " << command << " not recognized. Please try again.\n";
