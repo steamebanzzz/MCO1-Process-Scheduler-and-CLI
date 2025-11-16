@@ -44,6 +44,15 @@ public:
     void displayCPUInfo();
     void listConsoles();
     void reportUtil();
+
+    void parseCommand(const std::string& input);
+    void handleScreenS(const vector<string>& tokens);
+    void handleScreenC(const vector<string>& tokens, const std::string& rawInput);
+    void handleScreenR(const vector<string>& tokens);
+    void handleProcessSMI();
+    void handleVMStat();
+    void handleSchedulerStart();
+
     void startScheduler();
     bool consoleExists(const string& name) const;
     bool hasConsoles() const;
