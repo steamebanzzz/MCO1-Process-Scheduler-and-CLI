@@ -7,6 +7,7 @@
 #include <thread>
 #include <random>
 #include <cstdint>
+#include "memory_manager.h"
 
 using namespace std;
 
@@ -16,7 +17,9 @@ enum InstructionType {
     ADD,
     SUBTRACT,
     SLEEP,
-    FOR_LOOP
+    FOR_LOOP,
+    READ,
+    WRITE
 };
 
 struct Instruction {
@@ -25,6 +28,7 @@ struct Instruction {
     uint16_t value1 = 0, value2 = 0, repeats = 0;
     std::string message;
     std::vector<Instruction> subInstructions;
+    uint32_t memAddress = 0; 
 };
 
 class process_console {
@@ -42,6 +46,8 @@ public:
     Status status;
 
     vector<int> allocatedFrames;
+
+    MemoryManager* memoryManagerPtr = nullptr;
 
     // Constructor
     process_console(const string& name, int instructionTotal);
