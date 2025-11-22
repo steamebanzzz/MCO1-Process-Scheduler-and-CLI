@@ -222,9 +222,11 @@ void ConsoleManager::addConsole(const string& name, bool fromScreenCommand) {
     waitingQueue.push(newConsole);
     consoles[name] = newConsole;
 
+    /* COMMENT OUR FOR NOW
     if (fromScreenCommand) {
         displayConsole(name);
     }
+    */
 }
 
 
@@ -399,7 +401,7 @@ void generateRandomInstructions(process_console* proc, int instructionCount) {
     }
 }
 
-void ConsoleManager::parseCommand(const std::string& input) {
+/*void ConsoleManager::parseCommand(const std::string& input) {
     vector<string> tokens = tokenize(input);
     if (tokens.empty()) return;
 
@@ -438,7 +440,7 @@ void ConsoleManager::parseCommand(const std::string& input) {
     else {
         cout << "Error: Unknown command.\n";
     }
-}
+} */
 
 void ConsoleManager::handleScreenS(const vector<string>& tokens) {
     if (tokens.size() < 4) {
@@ -465,21 +467,152 @@ void ConsoleManager::handleScreenC(const vector<string>& tokens, const std::stri
     string name = tokens[2];
     int memsize = stoi(tokens[3]);
 
-    // Extract the raw instruction string between quotes
+    // Extract instruction string between quotes
     size_t firstQuote = rawInput.find('"');
     size_t lastQuote = rawInput.rfind('"');
-
-    string instructions = "";
+    string instructionStr = "";
     if (firstQuote != string::npos && lastQuote != string::npos && lastQuote > firstQuote) {
-        instructions = rawInput.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+        instructionStr = rawInput.substr(firstQuote + 1, lastQuote - firstQuote - 1);
     }
 
     cout << "[Parsed] screen -c\n";
     cout << "  Name: " << name << "\n";
     cout << "  Memory: " << memsize << "\n";
-    cout << "  Instructions: " << instructions << "\n";
+    cout << "  Instructions: " << instructionStr << "\n";
 
-    // TODO: call to create process + parse instructions
+    // Create process
+    addConsole(name, false); // false = don't enter loop
+    process_console* proc = consoles[name];
+    if (!proc) {
+        cout << "Failed to create process.\n";
+        return;
+    }
+
+    // Attach memory
+    if (!memManager.allocateMemory(proc, memsize)) {
+        cout << "Failed to allocate memory for process \"" << name << "\".\n";
+        return;
+    }
+    proc->memoryManagerPtr = &memManager;
+
+    // Parse instructions separated by ;
+    stringstream ss(instructionStr);
+    string instrToken;
+
+    while (getline(ss, instrToken, ';')) {
+        if (instrToken.empty()) continue;
+
+        // Trim leading/trailing whitespace
+        instrToken.erase(0, instrToken.find_first_not_of(" \t\n\r"));
+        instrToken.erase(instrToken.find_last_not_of(" \t\n\r") + 1);
+
+        Instruction instr;
+
+        if (instrToken.find("PRINT") == 0) {
+            instr.type = PRINT;
+            instr.message = instrToken.substr(5); // skip "PRINT"
+            instr.message.erase(0, instr.message.find_first_not_of(" \t"));
+        }
+        else if (instrToken.find("DECLARE") == 0) {
+            instr.type = DECLARE;
+            char varName[50] = {};
+            int value = 0;
+            if (sscanf_s(instrToken.c_str(), "DECLARE %49s %d",
+                varName, (unsigned)_countof(varName), &value) == 2) {
+                instr.var1 = varName;
+                instr.value1 = static_cast<uint16_t>(value);
+            }
+            else {
+                cout << "Error parsing DECLARE: " << instrToken << "\n";
+                continue;
+            }
+        }
+        else if (instrToken.find("ADD") == 0) {
+            instr.type = ADD;
+            char v1[50], v2[50], v3[50];
+            int scanned = sscanf_s(instrToken.c_str(), "ADD %49s %49s %49s",
+                v1, (unsigned)_countof(v1),
+                v2, (unsigned)_countof(v2),
+                v3, (unsigned)_countof(v3));
+            if (scanned != 3) { cout << "Error parsing ADD: " << instrToken << "\n"; continue; }
+            instr.var1 = v1; instr.var2 = v2; instr.var3 = v3;
+        }
+        else if (instrToken.find("SUBTRACT") == 0) {
+            instr.type = SUBTRACT;
+            char v1[50], v2[50], v3[50];
+            int scanned = sscanf_s(instrToken.c_str(), "SUBTRACT %49s %49s %49s",
+                v1, (unsigned)_countof(v1),
+                v2, (unsigned)_countof(v2),
+                v3, (unsigned)_countof(v3));
+            if (scanned != 3) { cout << "Error parsing SUBTRACT: " << instrToken << "\n"; continue; }
+            instr.var1 = v1; instr.var2 = v2; instr.var3 = v3;
+        }
+        else if (instrToken.find("SLEEP") == 0) {
+            instr.type = SLEEP;
+            int val;
+            if (sscanf_s(instrToken.c_str(), "SLEEP %d", &val) != 1) {
+                cout << "Error parsing SLEEP: " << instrToken << "\n"; continue;
+            }
+            instr.value1 = val;
+        }
+        else if (instrToken.find("FOR_LOOP") == 0) {
+            instr.type = FOR_LOOP;
+            int repeats;
+            char innerInstr[200];
+            int scanned = sscanf_s(instrToken.c_str(), "FOR_LOOP(%d) %[^\n]", &repeats, innerInstr, (unsigned)_countof(innerInstr));
+            if (scanned < 1) { cout << "Error parsing FOR_LOOP: " << instrToken << "\n"; continue; }
+            instr.repeats = repeats;
+
+            // Split inner instructions by ; if any
+            string innerStr = innerInstr;
+            stringstream innerSS(innerStr);
+            string innerToken;
+            while (getline(innerSS, innerToken, ';')) {
+                innerToken.erase(0, innerToken.find_first_not_of(" \t\n\r"));
+                innerToken.erase(innerToken.find_last_not_of(" \t\n\r") + 1);
+
+                if (innerToken.empty()) continue;
+
+                Instruction subInstr;
+                if (innerToken.find("PRINT") == 0) {
+                    subInstr.type = PRINT;
+                    subInstr.message = innerToken.substr(5);
+                    subInstr.message.erase(0, subInstr.message.find_first_not_of(" \t"));
+                }
+                // You can add more inner instruction parsing here if needed
+                instr.subInstructions.push_back(subInstr);
+            }
+        }
+        else if (instrToken.find("READ") == 0) {
+            instr.type = READ;
+            char v[50];
+            int addr;
+            if (sscanf_s(instrToken.c_str(), "READ %49s %d", v, (unsigned)_countof(v), &addr) != 2) {
+                cout << "Error parsing READ: " << instrToken << "\n"; continue;
+            }
+            instr.var1 = v;
+            instr.memAddress = addr;
+        }
+        else if (instrToken.find("WRITE") == 0) {
+            instr.type = WRITE;
+            char v[50];
+            int addr;
+            if (sscanf_s(instrToken.c_str(), "WRITE %49s %d", v, (unsigned)_countof(v), &addr) != 2) {
+                cout << "Error parsing WRITE: " << instrToken << "\n"; continue;
+            }
+            instr.var1 = v;
+            instr.memAddress = addr;
+        }
+        else {
+            cout << "Unknown instruction: " << instrToken << "\n";
+            continue;
+        }
+
+        proc->instructions.push_back(instr);
+    }
+
+    cout << "Process \"" << name << "\" created successfully with "
+        << proc->instructions.size() << " instructions.\n";
 }
 
 void ConsoleManager::handleScreenR(const vector<string>& tokens) {
@@ -745,8 +878,3 @@ void ConsoleManager::schedulerRR() {
     }
 }
 
-static uint16_t clampUint16(int value) {
-    if (value < 0) return 0;
-    if (value > UINT16_MAX) return UINT16_MAX;
-    return static_cast<uint16_t>(value);
-}
