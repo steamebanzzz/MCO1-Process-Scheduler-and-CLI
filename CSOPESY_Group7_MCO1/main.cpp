@@ -38,7 +38,7 @@ void displayHelp() {
     cout << "  exit                 - Exit the program\n\n";
 }
 
-void screenCommand(const vector<string>& cmd) {
+void screenCommand(const vector<string>& cmd, const string& rawLine) {
     if (!isInitialized) {
         cout << "Please run the \"initialize\" command first\n";
         return;
@@ -67,18 +67,7 @@ void screenCommand(const vector<string>& cmd) {
     // SCREEN -S  (Create process without instructions)
     // -----------------------
     if (opt == "-s") {
-        if (cmd.size() < 4) {
-            cout << "Usage: screen -s <name> <memory>\n";
-            return;
-        }
-
-        string name = cmd[2];
-        int mem = stoi(cmd[3]);
-
-        cout << "[Parsed] screen -s\n";
-        cout << "  Name: " << name << "\n";
-        cout << "  Memory: " << mem << "\n";
-
+        consoles.handleScreenS(cmd);  // simplified call
         return;
     }
 
@@ -86,27 +75,7 @@ void screenCommand(const vector<string>& cmd) {
     // SCREEN -C  (Create process with instructions)
     // -----------------------
     if (opt == "-c") {
-        if (cmd.size() < 5) {
-            cout << "Usage: screen -c <name> <memory> \"<instructions>\"\n";
-            return;
-        }
-
-        string name = cmd[2];
-        int mem = stoi(cmd[3]);
-
-        // Reconstruct the instruction string (because it may contain spaces)
-        string instructions;
-        for (int i = 4; i < cmd.size(); i++) {
-            instructions += cmd[i] + " ";
-        }
-        if (instructions.front() == '"') instructions.erase(0, 1);
-        if (instructions.back() == '"') instructions.pop_back();
-
-        cout << "[Parsed] screen -c\n";
-        cout << "  Name: " << name << "\n";
-        cout << "  Memory: " << mem << "\n";
-        cout << "  Instructions: " << instructions << "\n";
-
+        consoles.handleScreenC(cmd, rawLine);  // pass tokens and raw input
         return;
     }
 
@@ -114,18 +83,13 @@ void screenCommand(const vector<string>& cmd) {
     // SCREEN -R
     // -----------------------
     if (opt == "-r") {
-        if (cmd.size() < 3) {
-            cout << "Usage: screen -r <name>\n";
-            return;
-        }
-
-        cout << "[Parsed] screen -r\n";
-        cout << "  Requesting: " << cmd[2] << "\n";
+        consoles.handleScreenR(cmd);
         return;
     }
 
     cout << "Screen command \"" << opt << "\" not recognized.\n";
 }
+
 
 
 /*void testMemoryManager(ConsoleManager& cm) {
@@ -136,7 +100,7 @@ void screenCommand(const vector<string>& cmd) {
     cout << "-------------------------\n";
 }*/
 
-void checkCommand(const vector<string>& commandBuffer) {
+void checkCommand(const vector<string>& commandBuffer, const string& rawLine) {
     string command = commandBuffer[0];
 
     if (command == "clear") {
@@ -171,7 +135,7 @@ void checkCommand(const vector<string>& commandBuffer) {
             cout << "Already initialized.\n";
         }
         else if (command == "screen") {
-            screenCommand(commandBuffer);
+            screenCommand(commandBuffer, rawLine);
         }
         else if (command == "scheduler-start") {
             cout << "Running scheduler test\n";
@@ -204,18 +168,19 @@ int main() {
     displayHeader();
 
     while (true) {
-        commandBuffer.clear();
         cout << "Enter command: ";
+        string line;
+        getline(cin, line);
+        if (line.empty()) continue;
 
-        while (cin >> command) {
-            commandBuffer.push_back(command);
-            if (cin.peek() == '\n')
-                break;
+        vector<string> commandBuffer;
+        istringstream iss(line);
+        string token;
+        while (iss >> token) {
+            commandBuffer.push_back(token);
         }
 
-        if (!commandBuffer.empty()) {
-            checkCommand(commandBuffer);
-        }
+        checkCommand(commandBuffer, line);
     }
 
     return 0;
