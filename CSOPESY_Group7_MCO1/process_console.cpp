@@ -5,6 +5,7 @@
 #include <random>
 #include <thread>
 #include "process_console.h"
+#include "memory_manager.h"
 
 static int processCounter = 0;
 
@@ -119,19 +120,40 @@ std::string process_console::getCurrentTime() {
     return buffer;
 }
 
+static uint16_t clampUint16(int value) {
+    if (value < 0) return 0;
+    if (value > UINT16_MAX) return UINT16_MAX;
+    return static_cast<uint16_t>(value);
+}
+
 void process_console::executeInstruction(process_console* proc, const Instruction& instr) {
     switch (instr.type) {
     case PRINT: {
-        // DEFAULT MESSAGE
-        std::string msg = instr.message.empty()
-            ? "Hello world from " + proc->getName() + "!"
-            : instr.message;
+        std::string msg;
+        if (!instr.message.empty()) {
+            // If message is exactly a variable name and exists, print its value
+            if (proc->variables.count(instr.message)) {
+                msg = instr.message + " = " + to_string(proc->variables[instr.message]);
+            }
+            else {
+                msg = instr.message;
+            }
+        }
+        else {
+            msg = "Hello world from " + proc->getName() + "!";
+        }
         proc->logs.push_back(msg);
         break;
     }
-
     case DECLARE: {
-        proc->variables[instr.var1] = instr.value1;
+        if (proc->variables.size() >= 32) {
+            proc->logs.push_back("DECLARE ignored: symbol table full (32 variables).");
+        }
+        else {
+            // Clamp the value safely to 0–65535
+            uint16_t v = clampUint16(static_cast<int>(instr.value1));
+            proc->variables[instr.var1] = v;
+        }
         break;
     }
 
@@ -166,7 +188,46 @@ void process_console::executeInstruction(process_console* proc, const Instructio
         }
         break;
     }
+    case READ: {
+        // instr.var1 = variable to store result
+        // instr.memAddress = word address (uint32_t)
+        if (!proc->memoryManagerPtr) {
+            proc->logs.push_back("READ failed: no memory manager attached.");
+            break;
+        }
 
+        MemoryManager* mm = static_cast<MemoryManager*>(proc->memoryManagerPtr);
+        uint16_t value = 0;
+
+        // Attempt to read from memory
+        if (mm->readUint16(proc, instr.memAddress, value)) {
+            // On success, store value in the variable table
+            proc->variables[instr.var1] = value;
+        }
+        // On failure, readUint16 already logs and may terminate the process
+        break;
+    }
+    case WRITE: {
+        if (!proc->memoryManagerPtr) {
+            proc->logs.push_back("WRITE failed: no memory manager attached.");
+            break;
+        }
+
+        MemoryManager* mm = static_cast<MemoryManager*>(proc->memoryManagerPtr);
+        uint16_t valueToWrite = 0;
+
+        // If variable exists, use its value; otherwise, use instr.value1
+        if (!instr.var1.empty() && proc->variables.count(instr.var1)) {
+            valueToWrite = proc->variables[instr.var1];
+        }
+        else {
+            valueToWrite = clampUint16(static_cast<int>(instr.value1));
+        }
+
+        // Attempt to write to memory
+        mm->writeUint16(proc, instr.memAddress, valueToWrite);
+        break;
+    }
     default:
         proc->logs.push_back("Unknown instruction encountered.");
         break;
