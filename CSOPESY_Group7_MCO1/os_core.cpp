@@ -508,10 +508,25 @@ void ConsoleManager::handleScreenC(const vector<string>& tokens, const std::stri
 
         Instruction instr;
 
-        if (instrToken.find("PRINT") == 0) {
+        if (instrToken.rfind("PRINT", 0) == 0) {
             instr.type = PRINT;
-            instr.message = instrToken.substr(5); // skip "PRINT"
-            instr.message.erase(0, instr.message.find_first_not_of(" \t"));
+
+            // Extract everything inside PRINT(...)
+            size_t start = instrToken.find("(");
+            size_t end = instrToken.rfind(")");
+
+            if (start == std::string::npos || end == std::string::npos || end <= start) {
+                throw std::runtime_error("Syntax error: PRINT requires parentheses");
+            }
+
+            // Extract inside the parentheses
+            std::string content = instrToken.substr(start + 1, end - start - 1);
+
+            // Trim whitespace
+            content.erase(0, content.find_first_not_of(" \t"));
+            content.erase(content.find_last_not_of(" \t") + 1);
+
+            instr.message = content;
         }
         else if (instrToken.find("DECLARE") == 0) {
             instr.type = DECLARE;
@@ -626,7 +641,118 @@ void ConsoleManager::handleScreenR(const vector<string>& tokens) {
     cout << "[Parsed] screen -r\n";
     cout << "  Requesting status of: " << name << "\n";
 
-    // TODO: implement recovery logic
+    // Lookup process
+    auto it = consoles.find(name);
+    if (it == consoles.end()) {
+        cout << "Process " << name << " not found.\n";
+        return;
+    }
+
+    process_console* proc = it->second;
+
+    if (!proc || proc->instructions.empty()) {
+        cout << "Process " << name << " has no instructions.\n";
+        return;
+    }
+
+    // Symbol table for variables
+    map<string, uint16_t> vars;
+
+    for (const auto& instr : proc->instructions) {
+        switch (instr.type) {
+        case DECLARE:
+            if (vars.size() >= 32) {
+                cout << "Symbol table full, ignoring variable: " << instr.var1 << "\n";
+                break;
+            }
+            vars[instr.var1] = instr.value1;
+            break;
+
+        case ADD:
+            if (vars.count(instr.var2) && vars.count(instr.var3))
+                vars[instr.var1] = vars[instr.var2] + vars[instr.var3];
+            else
+                cout << "ADD error: variable not found\n";
+            break;
+
+        case SUBTRACT:
+            if (vars.count(instr.var2) && vars.count(instr.var3))
+                vars[instr.var1] = vars[instr.var2] - vars[instr.var3];
+            else
+                cout << "SUBTRACT error: variable not found\n";
+            break;
+
+        case PRINT: {
+            string output = instr.message;
+
+            // Replace variables in the message if " + varName" exists
+            size_t pos = 0;
+            while ((pos = output.find(" + ")) != string::npos) {
+                string left = output.substr(0, pos);
+                string right = output.substr(pos + 3);
+
+                // Trim quotes from right if present
+                right.erase(remove(right.begin(), right.end(), '"'), right.end());
+                if (vars.count(right))
+                    output = left + to_string(vars[right]);
+                else
+                    output = left + right;
+            }
+
+            // Remove quotes around message if present
+            if (!output.empty() && output.front() == '"') output.erase(0, 1);
+            if (!output.empty() && output.back() == '"') output.pop_back();
+
+            cout << output << "\n";
+            break;
+        }
+
+        case READ: {
+            uint16_t value = 0;
+            // Use MemoryManager's readUint16
+            if (!proc->memoryManagerPtr->readUint16(proc, instr.memAddress, value)) {
+                std::cout << "Process " << name
+                    << " shut down due to memory access violation at 0x"
+                    << std::hex << instr.memAddress << std::dec << "\n";
+                return;
+            }
+            vars[instr.var1] = value;
+            break;
+        }
+
+        case WRITE: {
+            uint16_t value = 0;
+            // Take the variable's value if it exists
+            if (vars.count(instr.var1))
+                value = vars[instr.var1];
+
+            // Use MemoryManager's writeUint16
+            if (!proc->memoryManagerPtr->writeUint16(proc, instr.memAddress, value)) {
+                std::cout << "Process " << name
+                    << " shut down due to memory access violation at 0x"
+                    << std::hex << instr.memAddress << std::dec << "\n";
+                return;
+            }
+            break;
+        }
+        case SLEEP:
+            // std::this_thread::sleep_for?
+            break;
+
+        case FOR_LOOP:
+            for (int i = 0; i < instr.repeats; i++) {
+                for (const auto& subInstr : instr.subInstructions) {
+                    // Recursive execution for sub-instructions
+                    // You can call a helper function here if desired
+                }
+            }
+            break;
+
+        default:
+            cout << "Unknown instruction type\n";
+            break;
+        }
+    }
 }
 
 void ConsoleManager::handleProcessSMI() {
