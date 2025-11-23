@@ -25,4 +25,6 @@ public:
     void saveFrameToBackingStore(int frameIndex);
     void loadFrameFromBackingStore(int frameIndex);
     void printFrameTable();
+    bool writeUint16(class process_console* proc, uint32_t wordAddress, uint16_t value);
+    bool readUint16(class process_console* proc, uint32_t wordAddress, uint16_t& outValue);
 };
