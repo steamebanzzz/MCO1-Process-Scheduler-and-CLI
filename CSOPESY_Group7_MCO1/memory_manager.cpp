@@ -1,17 +1,24 @@
-﻿#include <sstream>
+#include <cstdint>
+#include <vector>
+#include <unordered_map>
+#include <string>
+#include <sstream>
 #include <fstream>
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
-#include <cstring>
 
 #include "memory_manager.h"
 #include "process_console.h"
 
+// backward-compatible simple word map (kept for other code)
 std::unordered_map<uint32_t, uint16_t> memoryWords;
 uint32_t totalWords = 0;
+
+// Internal backing store map keyed by (pid<<32 | vpage)
 static std::unordered_map<uint64_t, std::vector<uint8_t>> backingStoreMap;
 
+// Per-frame byte storage and metadata (managed inside this cpp)
 static std::vector<std::vector<uint8_t>> frameData;     // frameIndex -> bytes (memPerFrame)
 static std::vector<int> frameOwnerPID;                  // frameIndex -> pid (-1 = free)
 static std::vector<int> frameOwnerVPage;                // frameIndex -> vpage (-1 = none)
@@ -29,7 +36,7 @@ MemoryManager::MemoryManager(int maxMem, int memPerFrame)
     frameCount = static_cast<int>(totalMemory / memPerFrame);
     if (frameCount <= 0) frameCount = 1;
 
-    // frames is declared in memory_manager.h as vector<process_console*>
+    // ensure frames vector declared in header sized to frameCount
     frames.clear();
     frames.resize(frameCount, nullptr);
 
@@ -45,7 +52,6 @@ MemoryManager::MemoryManager(int maxMem, int memPerFrame)
     if (!ofs) std::cerr << "Error creating backing store file.\n";
 }
 
-// TESTING PURPOSES
 void MemoryManager::printFrameTable() {
     std::cout << "\n[Frame Allocation Table]\n";
     for (int i = 0; i < frameCount; ++i) {
@@ -53,7 +59,7 @@ void MemoryManager::printFrameTable() {
             std::cout << "Frame " << i << ": Free\n";
         else
             std::cout << "Frame " << i << ": PID " << frameOwnerPID[i]
-                      << " VPage " << frameOwnerVPage[i] << "\n";
+            << " VPage " << frameOwnerVPage[i] << "\n";
     }
     std::cout << std::dec << std::endl;
 }
@@ -84,7 +90,7 @@ void MemoryManager::deallocateMemory(process_console* proc) {
     if (it == processFrames.end()) return;
 
     // For each virtual page, if resident free the frame and persist it to backing store
-    auto &pt = it->second;
+    auto& pt = it->second;
     for (int v = 0; v < (int)pt.size(); ++v) {
         int frameIdx = pt[v];
         if (frameIdx >= 0 && frameIdx < frameCount) {
@@ -142,7 +148,7 @@ int MemoryManager::handlePageFault(process_console* proc, int vpage) {
 
     auto ptabIt = processFrames.find(pid);
     if (ptabIt == processFrames.end()) return -1;
-    auto &pt = ptabIt->second;
+    auto& pt = ptabIt->second;
     if (vpage < 0 || vpage >= (int)pt.size()) return -1;
 
     // If already resident, return it.
@@ -177,7 +183,8 @@ int MemoryManager::handlePageFault(process_console* proc, int vpage) {
     auto bsIt = backingStoreMap.find(key);
     if (bsIt != backingStoreMap.end()) {
         frameData[freeFrame] = bsIt->second;
-    } else {
+    }
+    else {
         frameData[freeFrame].assign(memPerFrame, 0);
     }
 
@@ -219,7 +226,8 @@ void MemoryManager::loadFrameFromBackingStore(int frameIndex) {
     auto it = backingStoreMap.find(key);
     if (it != backingStoreMap.end()) {
         frameData[frameIndex] = it->second;
-    } else {
+    }
+    else {
         frameData[frameIndex].assign(memPerFrame, 0);
     }
 }
@@ -273,7 +281,8 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
     if (offsetByte + 1 < (uint32_t)memPerFrame) {
         frameData[frameIdx][offsetByte] = lo;
         frameData[frameIdx][offsetByte + 1] = hi;
-    } else {
+    }
+    else {
         // crosses page boundary: write low byte here, high byte to next virtual word
         frameData[frameIdx][offsetByte] = lo;
         int nextVPage = vpage + 1;
@@ -349,7 +358,8 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
         uint8_t b0 = frameData[frameIdx][offsetByte];
         uint8_t b1 = frameData[frameIdx][offsetByte + 1];
         outValue = static_cast<uint16_t>(b0 | (b1 << 8));
-    } else {
+    }
+    else {
         // cross page boundary
         uint8_t b0 = frameData[frameIdx][offsetByte];
         int nextVPage = vpage + 1;
