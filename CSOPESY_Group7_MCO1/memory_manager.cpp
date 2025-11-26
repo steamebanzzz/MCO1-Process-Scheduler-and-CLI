@@ -4,20 +4,19 @@
 #include <algorithm>
 #include <iomanip>
 #include <cstring>
+
 #include "memory_manager.h"
 #include "process_console.h"
 
-std::unordered_map<uint32_t, uint16_t> memoryWords; 
+std::unordered_map<uint32_t, uint16_t> memoryWords;
 uint32_t totalWords = 0;
+static std::unordered_map<uint64_t, std::vector<uint8_t>> backingStoreMap;
 
-static std::unordered_map<uint64_t, std::vector<uint8_t>> backingStoreMap; // frameIndex -> data
+static std::vector<std::vector<uint8_t>> frameData;     // frameIndex -> bytes (memPerFrame)
+static std::vector<int> frameOwnerPID;                  // frameIndex -> pid (-1 = free)
+static std::vector<int> frameOwnerVPage;                // frameIndex -> vpage (-1 = none)
 
-// Per frame byte storage and metadata
-static std::<std::vector<uint8_t>> frameData; // frameIndex -> data
-static std::vector<int> frameOwnerPID;        // frameIndex -> owning process ID
-static std::vector<int> frameOwnerVPage;      // frameIndex -> owning process virtual page
-
-// Paging statistics
+// Paging stats
 static uint64_t pagedInCount = 0;
 static uint64_t pagedOutCount = 0;
 
@@ -30,8 +29,11 @@ MemoryManager::MemoryManager(int maxMem, int memPerFrame)
     frameCount = static_cast<int>(totalMemory / memPerFrame);
     if (frameCount <= 0) frameCount = 1;
 
-    frames.resize(frameCount, nullptr);  // all frames free initially
+    // frames is declared in memory_manager.h as vector<process_console*>
+    frames.clear();
+    frames.resize(frameCount, nullptr);
 
+    // initialize internal frame metadata
     frameData.assign(frameCount, std::vector<uint8_t>(memPerFrame, 0));
     frameOwnerPID.assign(frameCount, -1);
     frameOwnerVPage.assign(frameCount, -1);
@@ -231,8 +233,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
         std::ostringstream oss;
         oss << "Access violation on WRITE at address 0x" << std::hex << wordAddress;
         proc->logs.push_back(oss.str());
-        proc->status = process_console::TERMINATED;
-        proc->isActive = false;
+        proc->setIsActive(false);
         return false;
     }
 
@@ -249,8 +250,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
         std::ostringstream oss;
         oss << "Access violation on WRITE at address 0x" << std::hex << wordAddress;
         proc->logs.push_back(oss.str());
-        proc->status = process_console::TERMINATED;
-        proc->isActive = false;
+        proc->setIsActive(false);
         return false;
     }
 
@@ -261,8 +261,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
             std::ostringstream oss;
             oss << "Page fault failed on WRITE at address 0x" << std::hex << wordAddress;
             proc->logs.push_back(oss.str());
-            proc->status = process_console::TERMINATED;
-            proc->isActive = false;
+            proc->setIsActive(false);
             return false;
         }
     }
@@ -282,8 +281,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
             std::ostringstream oss;
             oss << "Access violation on WRITE crossing boundary at 0x" << std::hex << wordAddress;
             proc->logs.push_back(oss.str());
-            proc->status = process_console::TERMINATED;
-            proc->isActive = false;
+            proc->setIsActive(false);
             return false;
         }
         int nextFrame = ptabIt->second[nextVPage];
@@ -293,8 +291,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
                 std::ostringstream oss;
                 oss << "Page fault failed on WRITE boundary at 0x" << std::hex << wordAddress;
                 proc->logs.push_back(oss.str());
-                proc->status = process_console::TERMINATED;
-                proc->isActive = false;
+                proc->setIsActive(false);
                 return false;
             }
         }
@@ -302,6 +299,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
         frameData[nextFrame][0] = hi;
     }
 
+    // Mirror into memoryWords for backwards compatibility (word-addressed)
     memoryWords[wordAddress] = value;
     return true;
 }
@@ -314,8 +312,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
         std::ostringstream oss;
         oss << "Access violation on READ at address 0x" << std::hex << wordAddress;
         proc->logs.push_back(oss.str());
-        proc->status = process_console::TERMINATED;
-        proc->isActive = false;
+        proc->setIsActive(false);
         return false;
     }
 
@@ -331,8 +328,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
         std::ostringstream oss;
         oss << "Access violation on READ at address 0x" << std::hex << wordAddress;
         proc->logs.push_back(oss.str());
-        proc->status = process_console::TERMINATED;
-        proc->isActive = false;
+        proc->setIsActive(false);
         return false;
     }
 
@@ -343,8 +339,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
             std::ostringstream oss;
             oss << "Page fault failed on READ at address 0x" << std::hex << wordAddress;
             proc->logs.push_back(oss.str());
-            proc->status = process_console::TERMINATED;
-            proc->isActive = false;
+            proc->setIsActive(false);
             return false;
         }
     }
@@ -362,8 +357,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
             std::ostringstream oss;
             oss << "Access violation on READ crossing boundary at 0x" << std::hex << wordAddress;
             proc->logs.push_back(oss.str());
-            proc->status = process_console::TERMINATED;
-            proc->isActive = false;
+            proc->setIsActive(false);
             return false;
         }
         int nextFrame = ptabIt->second[nextVPage];
@@ -373,8 +367,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
                 std::ostringstream oss;
                 oss << "Page fault failed on READ boundary at 0x" << std::hex << wordAddress;
                 proc->logs.push_back(oss.str());
-                proc->status = process_console::TERMINATED;
-                proc->isActive = false;
+                proc->setIsActive(false);
                 return false;
             }
         }
@@ -385,12 +378,3 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
     memoryWords[wordAddress] = outValue;
     return true;
 }
-
-uint64_t MemoryManager::getPagedInCount() const {
-    return pagedInCount;
-}
-
-uint64_t MemoryManager::getPagedOutCount() const {
-    return pagedOutCount;
-}
-
