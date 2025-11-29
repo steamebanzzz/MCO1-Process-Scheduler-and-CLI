@@ -756,16 +756,114 @@ void ConsoleManager::handleScreenR(const vector<string>& tokens) {
 }
 
 void ConsoleManager::handleProcessSMI() {
-    cout << "[Parsed] process-smi\n";
+    std::lock_guard<std::mutex> lock(processMutex);
+
+    std::cout << "\n============= process-smi =============\n";
+
+    // CPU / scheduler summary
+    std::cout << "CPU cores       : " << coreCount << "\n";
+    std::cout << "Available cores : " << availableCores << "\n";
+    std::cout << "Scheduler       : " << scheduler << "\n";
+    std::cout << "Quantum-cycles  : " << quantum_cycles << "\n";
+
+    // Memory config
+    int totalMem = max_overall_mem;
+    int frameSize = mem_per_frame;
+    int totalFrames = (frameSize > 0) ? totalMem / frameSize : 0;
+
+    std::cout << "\nMemory configuration:\n";
+    std::cout << "  Max overall mem : " << totalMem << " words\n";
+    std::cout << "  Mem per frame   : " << frameSize << " words\n";
+    std::cout << "  Frames (total)  : " << totalFrames << "\n";
+
+    // Per-process summary
+    if (!hasConsoles()) {
+        std::cout << "\nNo processes.\n";
+        std::cout << "=======================================\n";
+        return;
+    }
+
+    std::cout << "\nProcesses:\n";
+    std::cout << "  NAME\t\tPID\tSTATE\tCORE\tPC/INS\n";
+
+    for (auto& entry : consoles) {
+        process_console* proc = entry.second;
+        if (!proc) continue;
+
+        std::string stateStr;
+        switch (proc->getStatus()) {
+        case process_console::RUNNING:    stateStr = "RUNNING";   break;
+        case process_console::WAITING:    stateStr = "WAITING";   break;
+        case process_console::TERMINATED: stateStr = "FINISHED";  break;
+        default:                          stateStr = "UNKNOWN";   break;
+        }
+
+        std::cout << "  " << proc->getName()
+            << "\t" << proc->getProcessID()
+            << "\t" << stateStr
+            << "\t" << proc->getCoreID()
+            << "\t" << proc->getInstructionLine()
+            << "/" << proc->getInstructionTotal()
+            << "\n";
+    }
+
+    std::cout << "=======================================\n";
 }
 
 void ConsoleManager::handleVMStat() {
-    cout << "[Parsed] vmstat\n";
+    std::lock_guard<std::mutex> lock(processMutex);
+
+    // Memory stats
+    int totalMem = max_overall_mem;
+    int frameSize = mem_per_frame;
+    int totalFrames = (frameSize > 0) ? (totalMem / frameSize) : 0;
+    int usedFrames = memManager.getUsedFrameCount();
+    int freeFrames = totalFrames - usedFrames;
+    if (freeFrames < 0) freeFrames = 0;
+
+    uint64_t pagedIn = memManager.getPagedInCount();
+    uint64_t pagedOut = memManager.getPagedOutCount();
+
+    // CPU stats
+    unsigned long long idle = idleCpuTicks;
+    unsigned long long active = activeCpuTicks;
+    unsigned long long total = totalCpuTicks;
+
+    cout << "\n========== vmstat ==========\n";
+
+    cout << "Memory (bytes)\n";
+    cout << "  total : " << totalMem << "\n";
+    cout << "  used  : " << (usedFrames * frameSize) << "\n";
+    cout << "  free  : " << (freeFrames * frameSize) << "\n\n";
+
+    cout << "Frames\n";
+    cout << "  frame size   : " << frameSize << "\n";
+    cout << "  total frames : " << totalFrames << "\n";
+    cout << "  used frames  : " << usedFrames << "\n";
+    cout << "  free frames  : " << freeFrames << "\n\n";
+
+    cout << "CPU ticks\n";
+    cout << "  active : " << active << "\n";
+    cout << "  idle   : " << idle << "\n";
+    cout << "  total  : " << total << "\n\n";
+
+    cout << "Paging\n";
+    cout << "  paged in  : " << pagedIn << "\n";
+    cout << "  paged out : " << pagedOut << "\n";
+
+    cout << "============================\n";
 }
 
 void ConsoleManager::handleSchedulerStart() {
     cout << "[Parsed] scheduler-start\n";
-    // TODO: start actual scheduler thread
+    
+    if (!schedulerRunning) {
+		startScheduler();
+        schedulerRunning = true;
+    }
+
+    schedulerPaused = false;
+    schedulerCV.notify_one();
 }
 
 void ConsoleManager::startScheduler() {
@@ -959,6 +1057,16 @@ void ConsoleManager::schedulerFCFS() {
                 runningProcesses[nextProcess->getName()].detach();
             }
         }
+
+        // vmstat tick count
+        int activeCores = 0;
+        for (bool used : cpuCores) {
+            if (used) ++activeCores;
+        }
+
+        activeCpuTicks += activeCores;
+        idleCpuTicks += (coreCount - activeCores);
+        totalCpuTicks += coreCount;
     }
 }
 
@@ -1001,6 +1109,16 @@ void ConsoleManager::schedulerRR() {
                 runningProcesses[nextProcess->getName()].detach();
             }
         }
+
+        // vmstat tick count
+        int activeCores = 0;
+        for (bool used : cpuCores) {
+            if (used) ++activeCores;
+        }
+
+        activeCpuTicks += activeCores;
+        idleCpuTicks += (coreCount - activeCores);
+        totalCpuTicks += coreCount;
     }
 }
 

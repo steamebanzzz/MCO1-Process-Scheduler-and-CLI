@@ -27,4 +27,12 @@ public:
     void printFrameTable();
     bool writeUint16(class process_console* proc, uint32_t wordAddress, uint16_t value);
     bool readUint16(class process_console* proc, uint32_t wordAddress, uint16_t& outValue);
+
+    // Stats getters for vmstat
+    int getTotalMemory() const;
+    int getMemPerFrame() const;
+    int getFrameCount() const;
+    int getUsedFrameCount() const;
+    uint64_t getPagedInCount() const;
+    uint64_t getPagedOutCount() const;
 };

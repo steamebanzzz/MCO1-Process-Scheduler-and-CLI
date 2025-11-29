@@ -151,9 +151,11 @@ void checkCommand(const vector<string>& commandBuffer, const string& rawLine) {
         }
         else if (command == "process-smi") {
             cout << "[Parsed] process-smi\n";
+            consoles.handleProcessSMI();
         }
         else if (command == "vmstat") {
             cout << "[Parsed] vmstat\n";
+            consoles.handleVMStat();
         }
         else {
             cout << "Command " << command << " not recognized. Please try again.\n";

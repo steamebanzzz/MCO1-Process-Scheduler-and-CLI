@@ -30,6 +30,13 @@ static uint64_t pagedOutCount = 0;
 // Simple round-robin victim pointer
 static int nextVictim = 0;
 
+// helper
+static std::string to_hex(uint32_t value) {
+    std::stringstream ss;
+    ss << std::hex << value;
+    return ss.str();
+}
+
 MemoryManager::MemoryManager(int maxMem, int memPerFrame)
     : totalMemory(maxMem), memPerFrame(memPerFrame) {
     if (memPerFrame <= 0) memPerFrame = 1;
@@ -146,6 +153,13 @@ int MemoryManager::handlePageFault(process_console* proc, int vpage) {
     if (!proc) return -1;
     int pid = proc->getProcessID();
 
+    // Log page fault
+    {
+		std::ostringstream oss;
+		oss << "Page fault on PID " << pid << " VPage " << vpage;
+		proc->logs.push_back(oss.str());
+    }
+
     auto ptabIt = processFrames.find(pid);
     if (ptabIt == processFrames.end()) return -1;
     auto& pt = ptabIt->second;
@@ -163,6 +177,14 @@ int MemoryManager::handlePageFault(process_console* proc, int vpage) {
 
         // persist victim page to backing store
         if (victimPid != -1 && victimVPage != -1) {
+
+            // Log eviction
+			std::ostringstream oss;
+			oss << "[PAGE EVICT] Evicting PID " << victimPid 
+                << " VPage " << victimVPage 
+                << " from Frame " << victim;
+			proc->logs.push_back(oss.str());
+
             uint64_t vkey = (static_cast<uint64_t>(victimPid) << 32) | static_cast<uint32_t>(victimVPage);
             backingStoreMap[vkey] = frameData[victim];
             pagedOutCount++;
@@ -181,6 +203,14 @@ int MemoryManager::handlePageFault(process_console* proc, int vpage) {
     // load page bytes from backing store (if present) or zero page
     uint64_t key = (static_cast<uint64_t>(pid) << 32) | static_cast<uint32_t>(vpage);
     auto bsIt = backingStoreMap.find(key);
+    if (bsIt != backingStoreMap.end()) {
+        frameData[freeFrame] = bsIt->second;
+    }
+    else {
+        frameData[freeFrame].assign(memPerFrame, 0);
+    }
+
+    // Page load log
     if (bsIt != backingStoreMap.end()) {
         frameData[freeFrame] = bsIt->second;
     }
@@ -263,6 +293,8 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
     }
 
     int frameIdx = ptabIt->second[vpage];
+
+    proc->logs.push_back("[MEM WRITE] vaddr = 0x" + to_hex(wordAddress));
     if (frameIdx == -1) {
         frameIdx = handlePageFault(proc, vpage);
         if (frameIdx == -1) {
@@ -342,6 +374,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
     }
 
     int frameIdx = ptabIt->second[vpage];
+    proc->logs.push_back("[MEM READ] vaddr = 0x" + to_hex(wordAddress));
     if (frameIdx == -1) {
         frameIdx = handlePageFault(proc, vpage);
         if (frameIdx == -1) {
@@ -387,4 +420,35 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
 
     memoryWords[wordAddress] = outValue;
     return true;
+}
+
+int MemoryManager::getTotalMemory() const {
+    return totalMemory;
+}
+
+int MemoryManager::getMemPerFrame() const {
+    return memPerFrame;
+}
+
+int MemoryManager::getFrameCount() const {
+    return frameCount;
+}
+
+int MemoryManager::getUsedFrameCount() const {
+    int used = 0;
+    for (int i = 0; i > frameCount; ++i) {
+        if (frameOwnerPID[i] != -1) {
+            ++used;
+        }
+    }
+
+    return used;
+}
+
+uint64_t MemoryManager::getPagedInCount() const {
+    return pagedInCount;
+}
+
+uint64_t MemoryManager::getPagedOutCount() const {
+    return pagedOutCount;
 }

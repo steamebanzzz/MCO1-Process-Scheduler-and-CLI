@@ -28,6 +28,11 @@ private:
     map<string, thread> runningProcesses;
     MemoryManager memManager;
 
+    // CPU tick stats for vmstat
+    unsigned long long idleCpuTicks = 0;
+    unsigned long long activeCpuTicks = 0;
+    unsigned long long totalCpuTicks = 0;
+
 public:
     int max_overall_mem;
     int mem_per_frame;
