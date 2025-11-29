@@ -40,6 +40,9 @@ private:
     int instructionTotal;
     int coreID;
     bool isActive;
+    bool hasViolation = false;
+    std::string violationTime;
+    uint32_t violationAddress = 0;
 
 public:
     enum Status { RUNNING, WAITING, TERMINATED };
@@ -48,6 +51,8 @@ public:
     vector<int> allocatedFrames;
 
     MemoryManager* memoryManagerPtr = nullptr;
+
+    enum TimeFormat { DEFAULT, HH_MM_SS_ONLY };
 
     // Constructor
     process_console(const string& name, int instructionTotal);
@@ -64,12 +69,17 @@ public:
     int getCoreID() const;
     int getProcessID() const;
     bool getIsActive() const;
+    static string getCurrentTime(TimeFormat format = DEFAULT);
+    bool getHasViolation() const;
+    string getViolationTime() const;
+    uint32_t getViolationAddress() const;
 
     // Setters
     void setInstructionLine(int instructionLine);
     void setInstructionTotal(int instructionTotal);
     void setProcessID(int id);
     void setIsActive(bool active);
+    void setMemoryViolation(uint32_t address);
 
     // Process Memory and Instructions
     std::unordered_map<std::string, uint16_t> variables;
@@ -81,7 +91,4 @@ public:
 
     void executeInstruction(process_console* proc, const Instruction& instr);
     void generateRandomInstructions(process_console* proc, int instructionCount);
-
-private:
-    static string getCurrentTime();
 };

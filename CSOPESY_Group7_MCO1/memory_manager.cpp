@@ -271,7 +271,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
         std::ostringstream oss;
         oss << "Access violation on WRITE at address 0x" << std::hex << wordAddress;
         proc->logs.push_back(oss.str());
-        proc->setIsActive(false);
+        proc->setMemoryViolation(wordAddress);
         return false;
     }
 
@@ -288,7 +288,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
         std::ostringstream oss;
         oss << "Access violation on WRITE at address 0x" << std::hex << wordAddress;
         proc->logs.push_back(oss.str());
-        proc->setIsActive(false);
+        proc->setMemoryViolation(wordAddress);
         return false;
     }
 
@@ -322,7 +322,7 @@ bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uin
             std::ostringstream oss;
             oss << "Access violation on WRITE crossing boundary at 0x" << std::hex << wordAddress;
             proc->logs.push_back(oss.str());
-            proc->setIsActive(false);
+            proc->setMemoryViolation(wordAddress);
             return false;
         }
         int nextFrame = ptabIt->second[nextVPage];
@@ -353,7 +353,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
         std::ostringstream oss;
         oss << "Access violation on READ at address 0x" << std::hex << wordAddress;
         proc->logs.push_back(oss.str());
-        proc->setIsActive(false);
+        proc->setMemoryViolation(wordAddress);
         return false;
     }
 
@@ -369,7 +369,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
         std::ostringstream oss;
         oss << "Access violation on READ at address 0x" << std::hex << wordAddress;
         proc->logs.push_back(oss.str());
-        proc->setIsActive(false);
+        proc->setMemoryViolation(wordAddress);
         return false;
     }
 
@@ -400,7 +400,7 @@ bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint
             std::ostringstream oss;
             oss << "Access violation on READ crossing boundary at 0x" << std::hex << wordAddress;
             proc->logs.push_back(oss.str());
-            proc->setIsActive(false);
+            proc->setMemoryViolation(wordAddress);
             return false;
         }
         int nextFrame = ptabIt->second[nextVPage];

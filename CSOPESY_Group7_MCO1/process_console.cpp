@@ -107,7 +107,27 @@ void process_console::setIsActive(bool active) {
     isActive = active;
 }
 
-std::string process_console::getCurrentTime() {
+void process_console::setMemoryViolation(uint32_t address) {
+    this->hasViolation = true;
+    this->violationAddress = address;
+    this->violationTime = getCurrentTime(HH_MM_SS_ONLY);
+    this->isActive = false;
+    this->status = TERMINATED;
+}
+
+bool process_console::getHasViolation() const {
+    return hasViolation;
+}
+
+std::string process_console::getViolationTime() const {
+    return violationTime;
+}
+
+uint32_t process_console::getViolationAddress() const {
+    return violationAddress;
+}
+
+std::string process_console::getCurrentTime(TimeFormat format) {
     std::time_t now = std::time(0);
     std::tm localTime;
 #if defined(_MSC_VER)
@@ -116,7 +136,19 @@ std::string process_console::getCurrentTime() {
     localtime_r(&now, &localTime);
 #endif
     char buffer[50];
-    std::strftime(buffer, sizeof(buffer), "(%m/%d/%Y %I:%M:%S%p)", &localTime);
+    const char* formatString;
+
+    switch (format) {
+    case HH_MM_SS_ONLY:
+        formatString = "%H:%M:%S%p";
+        break;
+    case DEFAULT:
+    default:
+        formatString = "(%m/%d/%Y %I:%M:%S%p)";
+        break;
+    }
+
+    std::strftime(buffer, sizeof(buffer), formatString, &localTime);
     return buffer;
 }
 

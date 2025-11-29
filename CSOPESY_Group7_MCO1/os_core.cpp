@@ -650,6 +650,23 @@ void ConsoleManager::handleScreenR(const vector<string>& tokens) {
 
     process_console* proc = it->second;
 
+    // If process has memory violation
+    if (proc->getHasViolation()) {
+        std::cout << "Process " << name
+            << " shutdown due to memory access violation error that occured at "
+            << proc->getViolationTime() << ". 0x"
+            << std::hex << std::uppercase << setfill('0') << std::setw(8)
+            << proc->getViolationAddress() << std::dec
+            << " invalid." << "\n";
+        return;
+    }
+
+    // If process has already terminated
+    if (proc->getStatus() == process_console::TERMINATED) {
+        cout << "Process " << name << " not found. \n";
+        return;
+    }
+
     if (!proc || proc->instructions.empty()) {
         cout << "Process " << name << " has no instructions.\n";
         return;
