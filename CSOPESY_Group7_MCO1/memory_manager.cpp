@@ -1,4 +1,4 @@
-#include <cstdint>
+﻿#include <cstdint>
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -155,9 +155,9 @@ int MemoryManager::handlePageFault(process_console* proc, int vpage) {
 
     // Log page fault
     {
-		std::ostringstream oss;
-		oss << "Page fault on PID " << pid << " VPage " << vpage;
-		proc->logs.push_back(oss.str());
+        std::ostringstream oss;
+        oss << "Page fault on PID " << pid << " VPage " << vpage;
+        proc->logs.push_back(oss.str());
     }
 
     auto ptabIt = processFrames.find(pid);
@@ -179,11 +179,11 @@ int MemoryManager::handlePageFault(process_console* proc, int vpage) {
         if (victimPid != -1 && victimVPage != -1) {
 
             // Log eviction
-			std::ostringstream oss;
-			oss << "[PAGE EVICT] Evicting PID " << victimPid 
-                << " VPage " << victimVPage 
+            std::ostringstream oss;
+            oss << "[PAGE EVICT] Evicting PID " << victimPid
+                << " VPage " << victimVPage
                 << " from Frame " << victim;
-			proc->logs.push_back(oss.str());
+            proc->logs.push_back(oss.str());
 
             uint64_t vkey = (static_cast<uint64_t>(victimPid) << 32) | static_cast<uint32_t>(victimVPage);
             backingStoreMap[vkey] = frameData[victim];
@@ -263,162 +263,50 @@ void MemoryManager::loadFrameFromBackingStore(int frameIndex) {
 }
 
 // wordAddress is a 16-bit-word index (each word = 2 bytes). Returns false on error/violation.
-bool MemoryManager::writeUint16(process_console* proc, uint32_t wordAddress, uint16_t value) {
+bool MemoryManager::readUint16(process_console* proc, uint32_t address, uint16_t& value) {
     if (!proc) return false;
 
-    if (wordAddress >= totalWords) {
-        // Access violation: outside global memory
-        std::ostringstream oss;
-        oss << "Access violation on WRITE at address 0x" << std::hex << wordAddress;
-        proc->logs.push_back(oss.str());
-        proc->setMemoryViolation(wordAddress);
+    int pageIndex = address / memPerFrame;
+    int offset = address % memPerFrame;
+
+    auto it = processFrames.find(proc->getProcessID());
+    if (it == processFrames.end() || pageIndex >= it->second.size()) {
+        proc->setMemoryViolation(address);
         return false;
     }
 
-    // Convert to process-virtual page + offset (words-per-page)
-    uint32_t wordsPerFrame = static_cast<uint32_t>(memPerFrame / 2);
-    if (wordsPerFrame == 0) wordsPerFrame = 1;
-    int vpage = static_cast<int>(wordAddress / wordsPerFrame);
-    uint32_t offsetWord = wordAddress % wordsPerFrame;
-    uint32_t offsetByte = static_cast<uint32_t>(offsetWord * 2);
-
-    int pid = proc->getProcessID();
-    auto ptabIt = processFrames.find(pid);
-    if (ptabIt == processFrames.end() || vpage < 0 || vpage >= (int)ptabIt->second.size()) {
-        std::ostringstream oss;
-        oss << "Access violation on WRITE at address 0x" << std::hex << wordAddress;
-        proc->logs.push_back(oss.str());
-        proc->setMemoryViolation(wordAddress);
+    // Access backing store
+    uint64_t key = (static_cast<uint64_t>(proc->getProcessID()) << 32) | static_cast<uint32_t>(pageIndex);
+    auto bsIt = backingStoreMap.find(key);
+    if (bsIt == backingStoreMap.end()) {
+        proc->setMemoryViolation(address);
         return false;
     }
 
-    int frameIdx = ptabIt->second[vpage];
-
-    proc->logs.push_back("[MEM WRITE] vaddr = 0x" + to_hex(wordAddress));
-    if (frameIdx == -1) {
-        frameIdx = handlePageFault(proc, vpage);
-        if (frameIdx == -1) {
-            std::ostringstream oss;
-            oss << "Page fault failed on WRITE at address 0x" << std::hex << wordAddress;
-            proc->logs.push_back(oss.str());
-            proc->setIsActive(false);
-            return false;
-        }
-    }
-
-    uint8_t lo = static_cast<uint8_t>(value & 0xff);
-    uint8_t hi = static_cast<uint8_t>((value >> 8) & 0xff);
-
-    // If both bytes fit in this frame
-    if (offsetByte + 1 < (uint32_t)memPerFrame) {
-        frameData[frameIdx][offsetByte] = lo;
-        frameData[frameIdx][offsetByte + 1] = hi;
-    }
-    else {
-        // crosses page boundary: write low byte here, high byte to next virtual word
-        frameData[frameIdx][offsetByte] = lo;
-        int nextVPage = vpage + 1;
-        if (nextVPage >= (int)ptabIt->second.size()) {
-            std::ostringstream oss;
-            oss << "Access violation on WRITE crossing boundary at 0x" << std::hex << wordAddress;
-            proc->logs.push_back(oss.str());
-            proc->setMemoryViolation(wordAddress);
-            return false;
-        }
-        int nextFrame = ptabIt->second[nextVPage];
-        if (nextFrame == -1) {
-            nextFrame = handlePageFault(proc, nextVPage);
-            if (nextFrame == -1) {
-                std::ostringstream oss;
-                oss << "Page fault failed on WRITE boundary at 0x" << std::hex << wordAddress;
-                proc->logs.push_back(oss.str());
-                proc->setIsActive(false);
-                return false;
-            }
-        }
-        // high byte at byte offset 0 of next frame
-        frameData[nextFrame][0] = hi;
-    }
-
-    // Mirror into memoryWords for backwards compatibility (word-addressed)
-    memoryWords[wordAddress] = value;
+    value = static_cast<uint16_t>(bsIt->second[offset]);
     return true;
 }
 
-bool MemoryManager::readUint16(process_console* proc, uint32_t wordAddress, uint16_t& outValue) {
-    outValue = 0;
+bool MemoryManager::writeUint16(process_console* proc, uint32_t address, uint16_t value) {
     if (!proc) return false;
 
-    if (wordAddress >= totalWords) {
-        std::ostringstream oss;
-        oss << "Access violation on READ at address 0x" << std::hex << wordAddress;
-        proc->logs.push_back(oss.str());
-        proc->setMemoryViolation(wordAddress);
+    int pageIndex = address / memPerFrame;
+    int offset = address % memPerFrame;
+
+    auto it = processFrames.find(proc->getProcessID());
+    if (it == processFrames.end() || pageIndex >= it->second.size()) {
+        proc->setMemoryViolation(address);
         return false;
     }
 
-    uint32_t wordsPerFrame = static_cast<uint32_t>(memPerFrame / 2);
-    if (wordsPerFrame == 0) wordsPerFrame = 1;
-    int vpage = static_cast<int>(wordAddress / wordsPerFrame);
-    uint32_t offsetWord = wordAddress % wordsPerFrame;
-    uint32_t offsetByte = static_cast<uint32_t>(offsetWord * 2);
-
-    int pid = proc->getProcessID();
-    auto ptabIt = processFrames.find(pid);
-    if (ptabIt == processFrames.end() || vpage < 0 || vpage >= (int)ptabIt->second.size()) {
-        std::ostringstream oss;
-        oss << "Access violation on READ at address 0x" << std::hex << wordAddress;
-        proc->logs.push_back(oss.str());
-        proc->setMemoryViolation(wordAddress);
+    uint64_t key = (static_cast<uint64_t>(proc->getProcessID()) << 32) | static_cast<uint32_t>(pageIndex);
+    auto bsIt = backingStoreMap.find(key);
+    if (bsIt == backingStoreMap.end()) {
+        proc->setMemoryViolation(address);
         return false;
     }
 
-    int frameIdx = ptabIt->second[vpage];
-    proc->logs.push_back("[MEM READ] vaddr = 0x" + to_hex(wordAddress));
-    if (frameIdx == -1) {
-        frameIdx = handlePageFault(proc, vpage);
-        if (frameIdx == -1) {
-            std::ostringstream oss;
-            oss << "Page fault failed on READ at address 0x" << std::hex << wordAddress;
-            proc->logs.push_back(oss.str());
-            proc->setIsActive(false);
-            return false;
-        }
-    }
-
-    // If both bytes present in this frame
-    if (offsetByte + 1 < (uint32_t)memPerFrame) {
-        uint8_t b0 = frameData[frameIdx][offsetByte];
-        uint8_t b1 = frameData[frameIdx][offsetByte + 1];
-        outValue = static_cast<uint16_t>(b0 | (b1 << 8));
-    }
-    else {
-        // cross page boundary
-        uint8_t b0 = frameData[frameIdx][offsetByte];
-        int nextVPage = vpage + 1;
-        if (nextVPage >= (int)ptabIt->second.size()) {
-            std::ostringstream oss;
-            oss << "Access violation on READ crossing boundary at 0x" << std::hex << wordAddress;
-            proc->logs.push_back(oss.str());
-            proc->setMemoryViolation(wordAddress);
-            return false;
-        }
-        int nextFrame = ptabIt->second[nextVPage];
-        if (nextFrame == -1) {
-            nextFrame = handlePageFault(proc, nextVPage);
-            if (nextFrame == -1) {
-                std::ostringstream oss;
-                oss << "Page fault failed on READ boundary at 0x" << std::hex << wordAddress;
-                proc->logs.push_back(oss.str());
-                proc->setIsActive(false);
-                return false;
-            }
-        }
-        uint8_t b1 = frameData[nextFrame][0];
-        outValue = static_cast<uint16_t>(b0 | (b1 << 8));
-    }
-
-    memoryWords[wordAddress] = outValue;
+    bsIt->second[offset] = static_cast<uint8_t>(value & 0xFF);
     return true;
 }
 
