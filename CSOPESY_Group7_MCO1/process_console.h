@@ -28,7 +28,7 @@ struct Instruction {
     uint16_t value1 = 0, value2 = 0, repeats = 0;
     std::string message;
     std::vector<Instruction> subInstructions;
-    uint32_t memAddress = 0; 
+    uint32_t memAddress = 0;
 };
 
 class process_console {
