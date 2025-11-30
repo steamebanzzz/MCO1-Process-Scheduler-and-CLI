@@ -39,7 +39,8 @@ public:
     int min_mem_per_proc;
     int max_mem_per_proc;
     ConsoleManager(int maxMem = 4096, int frameSize = 256)
-        : memManager(maxMem, frameSize) {}
+        : memManager(maxMem, frameSize) {
+    }
     void initialize();
     void addConsole(const string& name, bool fromScreenCommand = false);
     void readConfig(const string& filename);
