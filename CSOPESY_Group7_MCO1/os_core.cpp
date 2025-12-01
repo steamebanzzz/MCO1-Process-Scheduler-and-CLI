@@ -451,48 +451,44 @@ void ConsoleManager::handleScreenS(const vector<string>& tokens) {
     string name = tokens[2];
     int memsize = stoi(tokens[3]);
 
-    cout << "[Parsed] screen -s\n";
-    cout << "  Name: " << name << "\n";
-    cout << "  Memory: " << memsize << "\n";
-
-    // Validate memory size
-    if ((memsize & (memsize - 1)) != 0) {  // not a power of 2
-        cout << "Invalid memory allocation: must be a power of 2.\n";
+    // Memory size validation
+    if ((memsize & (memsize - 1)) != 0) {     
+        cout << "invalid memory allocation\n";
+        return;
+    }
+    if (memsize < 64 || memsize > 65536) {    
+        cout << "invalid memory allocation\n";
         return;
     }
 
-    if (memsize < 64 || memsize > 65536) {  // bounds [2^6, 2^16]
-        cout << "Invalid memory allocation: must be between 64 and 65536 bytes.\n";
-        return;
-    }
-
-    // Check if process already exists
+    // checking for existing process name
     if (consoleExists(name)) {
         cout << "Process with name \"" << name << "\" already exists.\n";
         return;
     }
 
-    // Create process with default instruction count
-    int instructionCount = 10;  // or any heuristic
-    process_console* newProc = new process_console(name, instructionCount);
+    // creates a process with random instructions
+    int instructionCount = min_ins;  
+    process_console* proc = new process_console(name, instructionCount);
 
-    // Attach memory manager
-    newProc->memoryManagerPtr = &memManager;
+    proc->memoryManagerPtr = &memManager;
 
     // Allocate memory frames
-    if (!memManager.allocateMemory(newProc, memsize)) {
+    if (!memManager.allocateMemory(proc, memsize)) {
         cout << "Failed to allocate memory for process \"" << name << "\".\n";
-        delete newProc;
+        delete proc;
         return;
     }
 
-    // Add process to consoles
-    consoles[name] = newProc;
+    // Generate instructions
+    generateRandomInstructions(proc, instructionCount);
 
-    cout << "Process \"" << name << "\" created successfully with " << memsize << " bytes.\n";
+    // register process
+    consoles[name] = proc;
+    waitingQueue.push(proc);
 
-    // Optionally: generate random instructions
-    generateRandomInstructions(newProc, instructionCount);
+    cout << "Process \"" << name << "\" created successfully with "
+         << memsize << " bytes.\n";
 }
 
 void ConsoleManager::handleScreenC(const vector<string>& tokens, const string& rawInput) {
