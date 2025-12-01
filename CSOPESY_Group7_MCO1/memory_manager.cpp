@@ -11,14 +11,11 @@
 #include "memory_manager.h"
 #include "process_console.h"
 
-// backward-compatible simple word map (kept for other code)
 std::unordered_map<uint32_t, uint16_t> memoryWords;
 uint32_t totalWords = 0;
 
-// Internal backing store map keyed by (pid<<32 | vpage)
+// Internal backing store map
 static std::unordered_map<uint64_t, std::vector<uint8_t>> backingStoreMap;
-
-// Per-frame byte storage and metadata (managed inside this cpp)
 static std::vector<std::vector<uint8_t>> frameData;     // frameIndex -> bytes (memPerFrame)
 static std::vector<int> frameOwnerPID;                  // frameIndex -> pid (-1 = free)
 static std::vector<int> frameOwnerVPage;                // frameIndex -> vpage (-1 = none)
@@ -47,7 +44,6 @@ MemoryManager::MemoryManager(int maxMem, int memPerFrame)
     frames.clear();
     frames.resize(frameCount, nullptr);
 
-    // initialize internal frame metadata
     frameData.assign(frameCount, std::vector<uint8_t>(memPerFrame, 0));
     frameOwnerPID.assign(frameCount, -1);
     frameOwnerVPage.assign(frameCount, -1);
@@ -77,7 +73,7 @@ bool MemoryManager::allocateMemory(process_console* proc, int memoryRequired) {
     if (memoryRequired <= 0) return false;
 
     int requiredPages = (memoryRequired + memPerFrame - 1) / memPerFrame;
-    std::vector<int> pageTable(requiredPages, -1); // -1 -> not resident
+    std::vector<int> pageTable(requiredPages, -1); 
     processFrames[proc->getProcessID()] = std::move(pageTable);
 
     // initialize backing store pages (zero-filled)
@@ -324,7 +320,7 @@ int MemoryManager::getFrameCount() const {
 
 int MemoryManager::getUsedFrameCount() const {
     int used = 0;
-    for (int i = 0; i > frameCount; ++i) {
+    for (int i = 0; i < frameCount; ++i) {
         if (frameOwnerPID[i] != -1) {
             ++used;
         }
