@@ -4,10 +4,6 @@
 #include <fstream>
 #include <random>
 #include <thread>
-#include <vector>
-#include <sstream>
-#include <algorithm>
-#include <cctype>
 #include "process_console.h"
 #include "memory_manager.h"
 
@@ -269,4 +265,5 @@ void process_console::executeInstruction(process_console* proc, const Instructio
         break;
     }
 }
+
 
