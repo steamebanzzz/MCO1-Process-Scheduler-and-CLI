@@ -31,7 +31,7 @@ Main.cpp
 
 ```
 num-cpu 1
-scheduler rr
+scheduler "rr"
 quantum-cycles 10
 batch-process-freq 1
 min-ins 1000
@@ -39,6 +39,8 @@ max-ins 1000
 delay-per-exec 50
 max-overall-mem 4096
 mem-per-frame 256
+min-mem-per-proc 64
+max-mem-per-proc 65536
 ```
 
 ## Build & Run 
