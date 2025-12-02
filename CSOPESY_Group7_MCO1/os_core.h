@@ -1,70 +1,94 @@
 #pragma once
-#include <map>
-#include <iostream>
-#include <thread>
-#include <queue>
-#include <mutex>
 #include <string>
+#include <ctime>
 #include <vector>
-#include <condition_variable>
-#include "process_console.h"
+#include <iostream>
+#include <unordered_map>
+#include <thread>
+#include <random>
+#include <cstdint>
 #include "memory_manager.h"
 
 using namespace std;
 
-class ConsoleManager {
-private:
-    std::mutex processMutex;
-    std::condition_variable schedulerCV;
-    map<string, process_console*> consoles;
-    bool reportingMode = false;
-    bool currentConsole = false;
-    bool schedulerRunning = false;
-    bool schedulerPaused = false;
-    int coreCount;
-    int availableCores;
-    vector<bool> cpuCores;
-    queue<process_console*> waitingQueue;
-    map<string, thread> runningProcesses;
-    MemoryManager memManager;
+enum InstructionType {
+    PRINT,
+    DECLARE,
+    ADD,
+    SUBTRACT,
+    SLEEP,
+    FOR_LOOP,
+    READ,
+    WRITE
+};
 
-    // CPU tick stats for vmstat
-    unsigned long long idleCpuTicks = 0;
-    unsigned long long activeCpuTicks = 0;
-    unsigned long long totalCpuTicks = 0;
+struct Instruction {
+    InstructionType type;
+    std::string var1, var2, var3;
+    uint16_t value1 = 0, value2 = 0, repeats = 0;
+    std::string message;
+    std::vector<Instruction> subInstructions;
+    uint32_t memAddress = 0;
+};
+
+class process_console {
+private:
+    int processID;
+    string name;
+    string timestamp;
+    int instructionLine;
+    int instructionTotal;
+    int coreID;
+    bool isActive;
+    bool hasViolation = false;
+    std::string violationTime;
+    uint32_t violationAddress = 0;
 
 public:
-    int max_overall_mem;
-    int mem_per_frame;
-    int min_mem_per_proc;
-    int max_mem_per_proc;
-    ConsoleManager(int maxMem = 4096, int frameSize = 256)
-        : memManager(maxMem, frameSize) {
-    }
-    void initialize();
-    void addConsole(const string& name, bool fromScreenCommand = false);
-    void readConfig(const string& filename);
-    void testConfig();
-    void testMemoryAllocation();
-    void displayConsole(const string& name) const;
-    void displayCPUInfo();
-    void listConsoles();
-    void reportUtil();
+    enum Status { RUNNING, WAITING, TERMINATED };
+    Status status;
 
-    void parseCommand(const std::string& input);
-    void handleScreenS(const vector<string>& tokens);
-    void handleScreenC(const vector<string>& tokens, const std::string& rawInput);
-    void handleScreenR(const vector<string>& tokens);
-    void handleProcessSMI();
-    void handleVMStat();
-    void handleSchedulerStart();
+    vector<int> allocatedFrames;
 
-    void startScheduler();
-    bool consoleExists(const string& name) const;
-    bool hasConsoles() const;
-    process_console::Status getConsoleStatus(const string& name) const;
-    void loopConsole(const string& name);
-    void schedulerTest(bool set_scheduler);
-    void schedulerFCFS();
-    void schedulerRR();
+    MemoryManager* memoryManagerPtr = nullptr;
+
+    enum TimeFormat { DEFAULT, HH_MM_SS_ONLY };
+
+    // Constructor
+    process_console(const string& name, int instructionTotal);
+
+    // Core simulation
+    void runProcess(int coreID, int quantum_cycles, int delaysPerExec);
+
+    // Getters
+    string getName() const;
+    string getTimestamp() const;
+    int getInstructionLine() const;
+    int getInstructionTotal() const;
+    Status getStatus() const;
+    int getCoreID() const;
+    int getProcessID() const;
+    bool getIsActive() const;
+    static string getCurrentTime(TimeFormat format = DEFAULT);
+    bool getHasViolation() const;
+    string getViolationTime() const;
+    uint32_t getViolationAddress() const;
+
+    // Setters
+    void setInstructionLine(int instructionLine);
+    void setInstructionTotal(int instructionTotal);
+    void setProcessID(int id);
+    void setIsActive(bool active);
+    void setMemoryViolation(uint32_t address);
+
+    // Process Memory and Instructions
+    std::unordered_map<std::string, uint16_t> variables;
+    std::vector<Instruction> instructions;
+    size_t instructionPointer = 0;
+    uint8_t sleepTicks = 0;
+    std::vector<std::string> logs;
+    bool finished = false;
+
+    void executeInstruction(process_console* proc, const Instruction& instr);
+    void generateRandomInstructions(process_console* proc, int instructionCount);
 };
