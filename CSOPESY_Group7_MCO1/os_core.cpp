@@ -24,6 +24,8 @@ int max_overall_mem = 0;
 int mem_per_frame = 0;
 int min_mem_per_proc = 0;
 int max_mem_per_proc = 0;
+unsigned long long cpuActiveTicks = 0;
+unsigned long long cpuIdleTicks = 0;
 const uint64_t MAX_VALUE = 4294967296;
 
 bool scheduler_test_run = false;
@@ -401,7 +403,7 @@ void generateRandomInstructions(process_console* proc, int instructionCount) {
     }
 }
 
-void ConsoleManager::parseCommand(const std::string& input) {
+/*void ConsoleManager::parseCommand(const std::string& input) {
     vector<string> tokens = tokenize(input);
     if (tokens.empty()) return;
 
@@ -440,7 +442,7 @@ void ConsoleManager::parseCommand(const std::string& input) {
     else {
         cout << "Error: Unknown command.\n";
     }
-}
+} */
 
 void ConsoleManager::handleScreenS(const vector<string>& tokens) {
     if (tokens.size() < 4) {
@@ -451,44 +453,48 @@ void ConsoleManager::handleScreenS(const vector<string>& tokens) {
     string name = tokens[2];
     int memsize = stoi(tokens[3]);
 
-    // Memory size validation
-    if ((memsize & (memsize - 1)) != 0) {     
-        cout << "invalid memory allocation\n";
-        return;
-    }
-    if (memsize < 64 || memsize > 65536) {    
-        cout << "invalid memory allocation\n";
+    cout << "[Parsed] screen -s\n";
+    cout << "  Name: " << name << "\n";
+    cout << "  Memory: " << memsize << "\n";
+
+    // Validate memory size
+    if ((memsize & (memsize - 1)) != 0) {  // not a power of 2
+        cout << "Invalid memory allocation: must be a power of 2.\n";
         return;
     }
 
-    // checking for existing process name
+    if (memsize < 64 || memsize > 65536) {  // bounds [2^6, 2^16]
+        cout << "Invalid memory allocation: must be between 64 and 65536 bytes.\n";
+        return;
+    }
+
+    // Check if process already exists
     if (consoleExists(name)) {
         cout << "Process with name \"" << name << "\" already exists.\n";
         return;
     }
 
-    // creates a process with random instructions
-    int instructionCount = min_ins;  
-    process_console* proc = new process_console(name, instructionCount);
+    // Create process with default instruction count
+    int instructionCount = 10;  // or any heuristic
+    process_console* newProc = new process_console(name, instructionCount);
 
-    proc->memoryManagerPtr = &memManager;
+    // Attach memory manager
+    newProc->memoryManagerPtr = &memManager;
 
     // Allocate memory frames
-    if (!memManager.allocateMemory(proc, memsize)) {
+    if (!memManager.allocateMemory(newProc, memsize)) {
         cout << "Failed to allocate memory for process \"" << name << "\".\n";
-        delete proc;
+        delete newProc;
         return;
     }
 
-    // Generate instructions
-    generateRandomInstructions(proc, instructionCount);
+    // Add process to consoles
+    consoles[name] = newProc;
 
-    // register process
-    consoles[name] = proc;
-    waitingQueue.push(proc);
+    cout << "Process \"" << name << "\" created successfully with " << memsize << " bytes.\n";
 
-    cout << "Process \"" << name << "\" created successfully with "
-         << memsize << " bytes.\n";
+    // Optionally: generate random instructions
+    generateRandomInstructions(newProc, instructionCount);
 }
 
 void ConsoleManager::handleScreenC(const vector<string>& tokens, const string& rawInput) {
@@ -499,21 +505,12 @@ void ConsoleManager::handleScreenC(const vector<string>& tokens, const string& r
 
     string name = tokens[2];
     int memsize = stoi(tokens[3]); // Process memory in words
+    if (memsize <= 0) {
+        cout << "Invalid memory size\n";
+        return;
+    }
+    int memsize_bytes = memsize * 2;
 
-    if ((memsize & (memsize - 1)) != 0) {
-        cout << "invalid memory allocation\n";
-        return;
-    }
-    if (memsize < 64 || memsize > 65536) {
-        cout << "invalid memory allocation\n";
-        return;
-    }
-
-    if (consoleExists(name)) {
-        cout << "process with name \"" << name << "\" already exists\n";
-        return;
-    }
-    
     // Extract instruction string from raw input (everything after memsize)
     size_t instrPos = rawInput.find(tokens[3]);
     string instructionStr = rawInput.substr(instrPos + tokens[3].length());
@@ -521,134 +518,190 @@ void ConsoleManager::handleScreenC(const vector<string>& tokens, const string& r
     instructionStr.erase(0, instructionStr.find_first_not_of(" \""));
     instructionStr.erase(instructionStr.find_last_not_of("\"") + 1);
 
-    vector<string> instrLines;
-    string temp;
-    stringstream ss(instructionStr);
+    cout << "[Parsed] screen -c\n";
+    cout << "  Name: " << name << "\n";
+    cout << "  Memory: " << memsize << "\n";
+    cout << "  Instructions: " << instructionStr << "\n";
 
-    while (getline(ss, temp, ';')) {
-        temp.erase(0, temp.find_first_not_of(" "));
-        temp.erase(temp.find_last_not_of(" ") + 1);
+    // Split instructions by ';' and parse each
+    vector<Instruction> procInstructions;
+    istringstream ss(instructionStr);
+    string instrLine;
+    while (getline(ss, instrLine, ';')) {
+        if (instrLine.empty()) continue;
 
-        if (!temp.empty()) instrLines.push_back(temp);
-    }
+        // Trim spaces
+        instrLine.erase(0, instrLine.find_first_not_of(" "));
+        instrLine.erase(instrLine.find_last_not_of(" ") + 1);
 
-    if (instrLines.empty() || instrLines.size() > 50) {
-        cout << "invalid command\n";
-        return;
-    }
-
-    vector<Instruction> parsed;
-
-    for (string instrLine : instrLines) {
         Instruction instr;
-        string upper;
-
-        // get uppercase keyword
-        size_t spacePos = instrLine.find(' ');
+        string cmd;
         size_t parenPos = instrLine.find('(');
+        size_t spacePos = instrLine.find(' ');
 
         if (parenPos != string::npos)
-            upper = instrLine.substr(0, parenPos);
+            cmd = instrLine.substr(0, parenPos);
         else if (spacePos != string::npos)
-            upper = instrLine.substr(0, spacePos);
+            cmd = instrLine.substr(0, spacePos);
         else
-            upper = instrLine;
+            cmd = instrLine;
 
-        for (char &c : upper) c = toupper(c);
+        for (auto& c : cmd) c = toupper(c);
 
-        // Declare
-        if (upper == "DECLARE") {
+        if (cmd == "DECLARE") {
             instr.type = DECLARE;
-            string var; int val;
-
-            string rest = instrLine.substr(spacePos + 1);
-            stringstream s(rest);
+            istringstream s(instrLine.substr(spacePos + 1));
+            string var;
+            int val;
             s >> var >> val;
-
             instr.var1 = var;
-            instr.value1 = (uint16_t)val;
+            instr.value1 = static_cast<uint16_t>(val);
         }
-
-        // add
-        else if (upper == "ADD") {
-            instr.type = ADD;
-            stringstream s(instrLine.substr(spacePos + 1));
-            s >> instr.var1 >> instr.var2 >> instr.var3;
-        }
-
-        // subtract
-        else if (upper == "SUBTRACT") {
-            instr.type = SUBTRACT;
-            stringstream s(instrLine.substr(spacePos + 1));
-            s >> instr.var1 >> instr.var2 >> instr.var3;
-        }
-
-        // read
-        else if (upper == "READ") {
-            instr.type = READ;
-            string var; string hexAddr;
-            stringstream s(instrLine.substr(spacePos + 1));
-
-            s >> var >> hexAddr;
-            instr.var1 = var;
-
-            instr.memAddress = stoul(hexAddr, nullptr, 16);
-        }
-
-        // write
-        else if (upper == "WRITE") {
-            instr.type = WRITE;
-            string hexAddr; string var;
-            stringstream s(instrLine.substr(spacePos + 1));
-
-            s >> hexAddr >> var;
-            instr.var1 = var;
-            instr.memAddress = stoul(hexAddr, nullptr, 16);
-        }
-
-        // print
-        else if (upper == "PRINT") {
+        else if (cmd == "PRINT") {
             instr.type = PRINT;
+            size_t start = instrLine.find('(');
+            size_t end = instrLine.rfind(')');
+            if (start != string::npos && end != string::npos && end > start + 1) {
+                string rawMsg = instrLine.substr(start + 1, end - start - 1);
 
-            size_t a = instrLine.find('(');
-            size_t b = instrLine.rfind(')');
+                rawMsg.erase(0, rawMsg.find_first_not_of(" "));
+                rawMsg.erase(rawMsg.find_last_not_of(" ") + 1);
 
-            if (a != string::npos && b != string::npos && b > a) {
-                string content = instrLine.substr(a + 1, b - a - 1);
-
-                // Trim
-                content.erase(0, content.find_first_not_of(" "));
-                content.erase(content.find_last_not_of(" ") + 1);
-
-                instr.message = content;
+                instr.message = rawMsg;
             }
         }
+        else if (cmd == "READ" || cmd == "WRITE") {
+            istringstream s(instrLine.substr(spacePos + 1));
+            string var;
+            uint32_t addr;
+            s >> var >> std::hex >> addr;
+            instr.var1 = var;
+            instr.memAddress = addr;
+            instr.type = (cmd == "READ") ? READ : WRITE;
+        }
+        else if (cmd == "ADD") {
+            instr.type = ADD;
+            istringstream s(instrLine.substr(spacePos + 1));
+            s >> instr.var1 >> instr.var2 >> instr.var3;
+        }
+        else if (cmd == "SUBTRACT") {
+            instr.type = SUBTRACT;
+            istringstream s(instrLine.substr(spacePos + 1));
+            s >> instr.var1 >> instr.var2 >> instr.var3;
+        }
+        else if (cmd == "SLEEP") {
+            instr.type = SLEEP;
+            instr.value1 = static_cast<uint16_t>(stoi(instrLine.substr(spacePos + 1)));
+        }
+        // WILL FIX
+        else if (cmd == "FOR_LOOP") {
+            instr.type = FOR_LOOP;
 
+            // Find the repeat count and the opening brace
+            size_t spaceAfterLoop = instrLine.find(' ');
+            size_t bracePos = instrLine.find('{', spaceAfterLoop);
+            if (bracePos == string::npos) {
+                cout << "FOR_LOOP missing '{': " << instrLine << "\n";
+                continue;
+            }
+
+            // Extract repeats count
+            string repeatStr = instrLine.substr(spaceAfterLoop + 1, bracePos - spaceAfterLoop - 1);
+            instr.repeats = stoi(repeatStr);
+
+            // Find the matching closing brace
+            size_t endBracePos = instrLine.find_last_of('}');
+            if (endBracePos == string::npos || endBracePos <= bracePos) {
+                cout << "FOR_LOOP missing '}': " << instrLine << "\n";
+                continue;
+            }
+
+            // Extract the sub-instructions block
+            string subInstrStr = instrLine.substr(bracePos + 1, endBracePos - bracePos - 1);
+
+            // Parse sub-instructions properly by splitting semicolons inside the braces
+            size_t subPos = 0;
+            while (subPos < subInstrStr.size()) {
+                // Skip whitespace
+                while (subPos < subInstrStr.size() && isspace(subInstrStr[subPos])) subPos++;
+                if (subPos >= subInstrStr.size()) break;
+
+                // Find next semicolon or end of string
+                size_t nextSemi = subInstrStr.find(';', subPos);
+                string subLine = subInstrStr.substr(subPos, nextSemi - subPos);
+
+                // Trim spaces
+                subLine.erase(0, subLine.find_first_not_of(" "));
+                subLine.erase(subLine.find_last_not_of(" ") + 1);
+                if (subLine.empty()) {
+                    subPos = (nextSemi == string::npos) ? subInstrStr.size() : nextSemi + 1;
+                    continue;
+                }
+
+                // Parse sub-instruction
+                Instruction subInstr;
+                size_t subSpacePos = subLine.find(' ');
+                size_t subParenPos = subLine.find('(');
+                string subCmd;
+                if (subParenPos != string::npos)
+                    subCmd = subLine.substr(0, subParenPos);
+                else if (subSpacePos != string::npos)
+                    subCmd = subLine.substr(0, subSpacePos);
+                else
+                    subCmd = subLine;
+
+                for (auto& c : subCmd) c = toupper(c);
+
+                if (subCmd == "DECLARE") {
+                    subInstr.type = DECLARE;
+                    istringstream s(subLine.substr(subSpacePos + 1));
+                    string var; int val; s >> var >> val;
+                    subInstr.var1 = var;
+                    subInstr.value1 = static_cast<uint16_t>(val);
+                }
+                else if (subCmd == "PRINT") {
+                    subInstr.type = PRINT;
+                    size_t start = subLine.find('(');
+                    size_t end = subLine.find(')');
+                    if (start != string::npos && end != string::npos && end > start + 1)
+                        subInstr.message = subLine.substr(start + 1, end - start - 1);
+                }
+                else {
+                    cout << "Unknown sub-instruction in FOR_LOOP: " << subLine << "\n";
+                    subPos = (nextSemi == string::npos) ? subInstrStr.size() : nextSemi + 1;
+                    continue;
+                }
+
+                instr.subInstructions.push_back(subInstr);
+                subPos = (nextSemi == string::npos) ? subInstrStr.size() : nextSemi + 1;
+            }
+        }
         else {
-            cout << "invalid command\n";
-            return;
+            cout << "Unknown instruction: " << instrLine << "\n";
+            continue;
         }
 
-        parsed.push_back(instr);
+        procInstructions.push_back(instr);
     }
 
-    // Create process
-    process_console* proc = new process_console(name, parsed.size());
-    proc->instructions = parsed;
-    proc->setInstructionTotal(parsed.size());
+    // Create process and assign instructions
+    addConsole(name);
+    process_console* proc = consoles[name];
+
+    // Attach memory manager
     proc->memoryManagerPtr = &memManager;
 
-    // Allocate memory frames
+    // Allocate memory for the process
     if (!memManager.allocateMemory(proc, memsize)) {
-        cout << "Failed to allocate memory for process \"" << name << "\".\n";
-        delete proc;
+        cout << "Memory allocation failed for process " << name << ".\n";
         return;
     }
 
-    consoles[name] = proc;
+    // Assign instructions
+    proc->instructions = procInstructions;
+    proc->setInstructionTotal(procInstructions.size());
 
-    cout << "Process \"" << name << "\" created successfully with "
-         << parsed.size() << " instructions.\n";
+    cout << "Loaded " << procInstructions.size() << " instructions for process " << name << ".\n";
 }
 
 void ConsoleManager::handleScreenR(const vector<string>& tokens) {
@@ -705,6 +758,9 @@ void ConsoleManager::handleScreenR(const vector<string>& tokens) {
             }
             vars[instr.var1] = instr.value1;
             break;
+
+
+  
 
         case ADD:
             if (vars.count(instr.var2) && vars.count(instr.var3))
@@ -847,47 +903,35 @@ void ConsoleManager::handleProcessSMI() {
 }
 
 void ConsoleManager::handleVMStat() {
-    std::lock_guard<std::mutex> lock(processMutex);
+    int totalMem = memManager.getTotalMemory();
+    int usedMem = memManager.getUsedMemory();
+    int freeMem = totalMem - usedMem;
 
-    // Memory stats
-    int totalMem = max_overall_mem;
-    int frameSize = mem_per_frame;
-    int totalFrames = (frameSize > 0) ? (totalMem / frameSize) : 0;
+    int totalFrames = memManager.getFrameCount();
     int usedFrames = memManager.getUsedFrameCount();
     int freeFrames = totalFrames - usedFrames;
-    if (freeFrames < 0) freeFrames = 0;
 
-    uint64_t pagedIn = memManager.getPagedInCount();
-    uint64_t pagedOut = memManager.getPagedOutCount();
+    std::cout << "\n========== vmstat ==========\n";
+    std::cout << "Memory (bytes)\n";
+    std::cout << "  total : " << totalMem << "\n";
+    std::cout << "  used  : " << usedMem << "\n";
+    std::cout << "  free  : " << freeMem << "\n\n";
 
-    // CPU stats
-    unsigned long long idle = idleCpuTicks;
-    unsigned long long active = activeCpuTicks;
-    unsigned long long total = totalCpuTicks;
+    std::cout << "Frames\n";
+    std::cout << "  frame size   : " << memManager.getMemPerFrame() << "\n";
+    std::cout << "  total frames : " << totalFrames << "\n";
+    std::cout << "  used frames  : " << usedFrames << "\n";
+    std::cout << "  free frames  : " << freeFrames << "\n\n";
 
-    cout << "\n========== vmstat ==========\n";
+    std::cout << "CPU ticks\n";
+    std::cout << "  active : " << cpuActiveTicks << "\n";
+    std::cout << "  idle   : " << cpuIdleTicks << "\n";
+    std::cout << "  total  : " << (cpuActiveTicks + cpuIdleTicks) << "\n\n";
 
-    cout << "Memory (bytes)\n";
-    cout << "  total : " << totalMem << "\n";
-    cout << "  used  : " << (usedFrames * frameSize) << "\n";
-    cout << "  free  : " << (freeFrames * frameSize) << "\n\n";
-
-    cout << "Frames\n";
-    cout << "  frame size   : " << frameSize << "\n";
-    cout << "  total frames : " << totalFrames << "\n";
-    cout << "  used frames  : " << usedFrames << "\n";
-    cout << "  free frames  : " << freeFrames << "\n\n";
-
-    cout << "CPU ticks\n";
-    cout << "  active : " << active << "\n";
-    cout << "  idle   : " << idle << "\n";
-    cout << "  total  : " << total << "\n\n";
-
-    cout << "Paging\n";
-    cout << "  paged in  : " << pagedIn << "\n";
-    cout << "  paged out : " << pagedOut << "\n";
-
-    cout << "============================\n";
+    std::cout << "Paging\n";
+    std::cout << "  paged in  : " << memManager.getPagedInCount() << "\n";
+    std::cout << "  paged out : " << memManager.getPagedOutCount() << "\n";
+    std::cout << "============================\n";
 }
 
 void ConsoleManager::handleSchedulerStart() {
