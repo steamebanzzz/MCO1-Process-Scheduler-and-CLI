@@ -1,38 +1,94 @@
 #pragma once
-#include <vector>
-#include <map>
-#include <fstream>
 #include <string>
+#include <ctime>
+#include <vector>
 #include <iostream>
-#include <algorithm>
+#include <unordered_map>
+#include <thread>
+#include <random>
+#include <cstdint>
+#include "memory_manager.h"
 
-class process_console;  // forward declaration
+using namespace std;
 
-class MemoryManager {
+enum InstructionType {
+    PRINT,
+    DECLARE,
+    ADD,
+    SUBTRACT,
+    SLEEP,
+    FOR_LOOP,
+    READ,
+    WRITE
+};
+
+struct Instruction {
+    InstructionType type;
+    std::string var1, var2, var3;
+    uint16_t value1 = 0, value2 = 0, repeats = 0;
+    std::string message;
+    std::vector<Instruction> subInstructions;
+    uint32_t memAddress = 0;
+};
+
+class process_console {
 private:
-    int totalMemory;
-    int memPerFrame;
-    int frameCount;
-    std::vector<process_console*> frames;                 // true = occupied, false = free
-    std::map<int, std::vector<int>> processFrames; // PID -> list of allocated frame indices
-    std::string backingStoreFile = "csopesy-backing-store.txt";
+    int processID;
+    string name;
+    string timestamp;
+    int instructionLine;
+    int instructionTotal;
+    int coreID;
+    bool isActive;
+    bool hasViolation = false;
+    std::string violationTime;
+    uint32_t violationAddress = 0;
 
 public:
-    MemoryManager(int maxMem, int memPerFrame);
-    bool allocateMemory(process_console* proc, int memoryRequired); // returns success/fail
-    void deallocateMemory(process_console* proc);
-    int handlePageFault(process_console* proc, int frameIndex);
-    void saveFrameToBackingStore(int frameIndex);
-    void loadFrameFromBackingStore(int frameIndex);
-    void printFrameTable();
-    bool writeUint16(class process_console* proc, uint32_t wordAddress, uint16_t value);
-    bool readUint16(class process_console* proc, uint32_t wordAddress, uint16_t& outValue);
+    enum Status { RUNNING, WAITING, TERMINATED };
+    Status status;
 
-    // Stats getters for vmstat
-    int getTotalMemory() const;
-    int getMemPerFrame() const;
-    int getFrameCount() const;
-    int getUsedFrameCount() const;
-    uint64_t getPagedInCount() const;
-    uint64_t getPagedOutCount() const;
+    vector<int> allocatedFrames;
+
+    MemoryManager* memoryManagerPtr = nullptr;
+
+    enum TimeFormat { DEFAULT, HH_MM_SS_ONLY };
+
+    // Constructor
+    process_console(const string& name, int instructionTotal);
+
+    // Core simulation
+    void runProcess(int coreID, int quantum_cycles, int delaysPerExec);
+
+    // Getters
+    string getName() const;
+    string getTimestamp() const;
+    int getInstructionLine() const;
+    int getInstructionTotal() const;
+    Status getStatus() const;
+    int getCoreID() const;
+    int getProcessID() const;
+    bool getIsActive() const;
+    static string getCurrentTime(TimeFormat format = DEFAULT);
+    bool getHasViolation() const;
+    string getViolationTime() const;
+    uint32_t getViolationAddress() const;
+
+    // Setters
+    void setInstructionLine(int instructionLine);
+    void setInstructionTotal(int instructionTotal);
+    void setProcessID(int id);
+    void setIsActive(bool active);
+    void setMemoryViolation(uint32_t address);
+
+    // Process Memory and Instructions
+    std::unordered_map<std::string, uint16_t> variables;
+    std::vector<Instruction> instructions;
+    size_t instructionPointer = 0;
+    uint8_t sleepTicks = 0;
+    std::vector<std::string> logs;
+    bool finished = false;
+
+    void executeInstruction(process_console* proc, const Instruction& instr);
+    void generateRandomInstructions(process_console* proc, int instructionCount);
 };
