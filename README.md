@@ -10,7 +10,7 @@ Developers:
 - Adler Clarence E. Strebel  
 
 ## Project Overview
-This project is an emulator of a multitasking operating system that ff:
+This project is an emulator of a multitasking operating system that does the ff:
 - Process creation using "screen -s" and "screen -c"
 - Instruction execution including DECLARE, ADD, PRINT, READ, and WRITE
 - Demand paging memory manager
