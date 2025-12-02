@@ -78,5 +78,5 @@ max-mem-per-proc 65536
 9. vmstat  
    - Shows a detailed breakdown of system activity including CPU ticks, memory allocation, active/inactive pages, and page-in/page-out counters.
 
-10. exit  
+10. exit
    - Terminates the CLI emulator safely and shuts down all remaining processes.
