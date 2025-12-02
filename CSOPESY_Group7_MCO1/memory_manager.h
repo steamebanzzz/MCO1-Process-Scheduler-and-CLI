@@ -1,94 +1,63 @@
 #pragma once
-#include <string>
-#include <ctime>
-#include <vector>
-#include <iostream>
-#include <unordered_map>
-#include <thread>
-#include <random>
 #include <cstdint>
-#include "memory_manager.h"
+#include <vector>
+#include <unordered_map>
+#include <string>
 
-using namespace std;
+class process_console;
 
-enum InstructionType {
-    PRINT,
-    DECLARE,
-    ADD,
-    SUBTRACT,
-    SLEEP,
-    FOR_LOOP,
-    READ,
-    WRITE
-};
-
-struct Instruction {
-    InstructionType type;
-    std::string var1, var2, var3;
-    uint16_t value1 = 0, value2 = 0, repeats = 0;
-    std::string message;
-    std::vector<Instruction> subInstructions;
-    uint32_t memAddress = 0;
-};
-
-class process_console {
-private:
-    int processID;
-    string name;
-    string timestamp;
-    int instructionLine;
-    int instructionTotal;
-    int coreID;
-    bool isActive;
-    bool hasViolation = false;
-    std::string violationTime;
-    uint32_t violationAddress = 0;
-
+class MemoryManager {
 public:
-    enum Status { RUNNING, WAITING, TERMINATED };
-    Status status;
+    MemoryManager(int totalMemoryBytes, int memPerFrameBytes);
 
-    vector<int> allocatedFrames;
+    // Memory allocation
+    bool allocateMemory(process_console* proc, int memoryRequiredBytes);
+    void deallocateMemory(process_console* proc);
 
-    MemoryManager* memoryManagerPtr = nullptr;
+    // Page fault handling
+    int handlePageFault(process_console* proc, int vpage);
 
-    enum TimeFormat { DEFAULT, HH_MM_SS_ONLY };
+    // Read/write memory
+    bool readUint16(process_console* proc, uint32_t address, uint16_t& value);
+    bool writeUint16(process_console* proc, uint32_t address, uint16_t value);
 
-    // Constructor
-    process_console(const string& name, int instructionTotal);
+    // Backing store
+    void saveFrameToBackingStore(int frameIndex);
+    void loadFrameFromBackingStore(int frameIndex);
 
-    // Core simulation
-    void runProcess(int coreID, int quantum_cycles, int delaysPerExec);
+    // Utilities
+    int getTotalMemory() const;
+    int getMemPerFrame() const;
+    int getFrameCount() const;
+    int getUsedFrameCount() const;
+    int getUsedMemory() const;
+    uint64_t getPagedInCount() const;
+    uint64_t getPagedOutCount() const;
 
-    // Getters
-    string getName() const;
-    string getTimestamp() const;
-    int getInstructionLine() const;
-    int getInstructionTotal() const;
-    Status getStatus() const;
-    int getCoreID() const;
-    int getProcessID() const;
-    bool getIsActive() const;
-    static string getCurrentTime(TimeFormat format = DEFAULT);
-    bool getHasViolation() const;
-    string getViolationTime() const;
-    uint32_t getViolationAddress() const;
+    std::vector<int> getFramesForProcess(int pid) const;
+    void printFrameTable() const;
+    void debugPrintFrames() const;
 
-    // Setters
-    void setInstructionLine(int instructionLine);
-    void setInstructionTotal(int instructionTotal);
-    void setProcessID(int id);
-    void setIsActive(bool active);
-    void setMemoryViolation(uint32_t address);
+private:
+    int totalMemory;
+    int memPerFrame;
+    int frameCount;
 
-    // Process Memory and Instructions
-    std::unordered_map<std::string, uint16_t> variables;
-    std::vector<Instruction> instructions;
-    size_t instructionPointer = 0;
-    uint8_t sleepTicks = 0;
-    std::vector<std::string> logs;
-    bool finished = false;
+    std::vector<process_console*> frames;
+    std::vector<std::vector<uint8_t>> frameData;
+    std::vector<int> frameOwnerPID;
+    std::vector<int> frameOwnerVPage;
 
-    void executeInstruction(process_console* proc, const Instruction& instr);
-    void generateRandomInstructions(process_console* proc, int instructionCount);
+    uint64_t pagedInCount;
+    uint64_t pagedOutCount;
+    int nextVictim;
+
+    std::unordered_map<int, std::vector<int>> processFrames;
+    static std::unordered_map<uint64_t, std::vector<uint8_t>> backingStoreMap;
+    std::string backingStoreFile = "backing_store.txt";
+
+    // Internal helpers
+    int findFreeFrame();
+    int chooseVictimFrame();
+    static std::string to_hex(uint32_t value);
 };
