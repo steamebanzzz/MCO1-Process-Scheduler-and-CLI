@@ -40,22 +40,42 @@ bool MemoryManager::allocateMemory(process_console* proc, int memoryRequiredByte
     for (int i = 0; i < frameCount; ++i)
         if (frameOwnerPID[i] == -1) freeFrames++;
 
-    if (freeFrames < framesNeeded) {
-        std::cout << "Memory allocation failed: only " << freeFrames
-            << " free frame(s) for process " << proc->getProcessID() << "\n";
-        return false;
-    }
+    // if (freeFrames < framesNeeded) {
+    //    std::cout << "Memory allocation failed: only " << freeFrames
+    //        << " free frame(s) for process " << proc->getProcessID() << "\n";
+    //    return false;
+    // }
 
     std::vector<int> allocatedFrames;
-    for (int i = 0; i < frameCount && (int)allocatedFrames.size() < framesNeeded; ++i) {
-        if (frameOwnerPID[i] == -1) {
-            frameOwnerPID[i] = proc->getProcessID();
-            frameOwnerVPage[i] = static_cast<int>(allocatedFrames.size());
-            frames[i] = proc;
-            std::fill(frameData[i].begin(), frameData[i].end(), 0);
-            allocatedFrames.push_back(i);
+    for (int v = 0; v < framesNeeded; ++v) {
+        int frameIdx = findFreeFrame();
+        if (frameIdx == -1) {
+            // No free frame → evict one
+            frameIdx = chooseVictimFrame();
+            int victimPid = frameOwnerPID[frameIdx];
+            int victimVPage = frameOwnerVPage[frameIdx];
+
+            if (victimPid != -1 && victimVPage != -1) {
+                // Save victim to backing store
+                uint64_t key = (static_cast<uint64_t>(victimPid) << 32) | static_cast<uint32_t>(victimVPage);
+                backingStoreMap[key] = frameData[frameIdx];
+                pagedOutCount++;
+
+                auto vit = processFrames.find(victimPid);
+                if (vit != processFrames.end() && victimVPage < (int)vit->second.size()) {
+                    vit->second[victimVPage] = -1;
+                }
+            }
         }
+
+        frameOwnerPID[frameIdx] = proc->getProcessID();
+        frameOwnerVPage[frameIdx] = v;
+        frames[frameIdx] = proc;
+        std::fill(frameData[frameIdx].begin(), frameData[frameIdx].end(), 0);
+        allocatedFrames.push_back(frameIdx);
+        pagedInCount++;
     }
+
 
     proc->allocatedFrames = allocatedFrames;
     processFrames[proc->getProcessID()] = allocatedFrames;
